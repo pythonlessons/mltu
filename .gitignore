@@ -1,0 +1,7 @@
+__pycache__
+*.egg-info
+*.pyc
+venv
+
+Datasets/*
+Models/*
