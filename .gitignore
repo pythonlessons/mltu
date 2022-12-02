@@ -5,3 +5,5 @@ venv
 
 Datasets/*
 Models/*
+
+!*.md

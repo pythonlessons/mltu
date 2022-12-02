@@ -11,5 +11,5 @@ class ModelConfigs(BaseModelConfigs):
         self.height = 32
         self.width = 128
         self.max_text_length = 23
-        self.batch_size = 4
+        self.batch_size = 1024
         self.learning_rate = 1e-4
