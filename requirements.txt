@@ -1,0 +1,9 @@
+stow
+pyyaml
+tqdm
+numpy
+opencv-python
+tensorflow==2.10.*
+pandas
+tf2onnx
+onnxruntime # onnxruntime-gpu for GPU support
