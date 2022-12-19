@@ -6,6 +6,16 @@ Clone the repository and install the requirements:
 ```bash
 git clone https://github.com/pythonlessons/mltu.git
 ```
+cd into the repository
+```bash
+cd mltu
+```
+Install the requirements:
+```bash
+pip install -r requirements.txt
+```
+
+Install the mltu package
 ```bash
 pip install .
 ```
