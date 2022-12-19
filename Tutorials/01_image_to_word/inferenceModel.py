@@ -33,8 +33,8 @@ if __name__ == "__main__":
 
     df = pd.read_csv("Models/1_image_to_word/202211270035/val.csv").dropna().values.tolist()
 
-    accum_cer, accum_index = 0, 0
-    for index, (image_path, label) in enumerate(tqdm(df)):
+    accum_cer = []
+    for image_path, label in tqdm(df[:20]):
         image = cv2.imread(image_path)
 
         try:
@@ -44,14 +44,13 @@ if __name__ == "__main__":
             print(f"Image: {image_path}, Label: {label}, Prediction: {prediction_text}, CER: {cer}")
 
             # resize image by 3 times for visualization
-            image = cv2.resize(image, (image.shape[1] * 3, image.shape[0] * 3))
-            cv2.imshow(prediction_text, image)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-            accum_index += 1
+            # image = cv2.resize(image, (image.shape[1] * 3, image.shape[0] * 3))
+            # cv2.imshow(prediction_text, image)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
         except:
             continue
         
-        accum_cer += cer
+        accum_cer.append(cer)
 
-    print(f"Average CER: {accum_cer / len(df)}")
+    print(f"Average CER: {np.average(accum_cer)}")

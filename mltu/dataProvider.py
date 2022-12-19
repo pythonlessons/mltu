@@ -17,7 +17,19 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 class DataProvider(tf.keras.utils.Sequence):
-    """ Standardised object for providing data to a TensorFlow model. """
+    """ Standardised object for providing data to a TensorFlow model while training.
+
+    Args:
+        dataset (str, list, pd.DataFrame): Path to dataset, list of data or pandas dataframe of data.
+        data_preprocessors (list): List of data preprocessors. (e.g. [read image, read audio, etc.])
+        batch_size (int, optional): The number of samples to include in each batch. Defaults to 4.
+        shuffle (bool): Whether to shuffle the data. Defaults to True.
+        initial_epoch (int): The initial epoch. Defaults to 1.
+        augmentors (list, optional): List of augmentor functions. Defaults to None.
+        transformers (list, optional): List of transformer functions. Defaults to None.
+        skip_validation (bool, optional): Whether to skip validation. Defaults to False.
+        limit (int, optional): Limit the number of samples in the dataset. Defaults to None.
+    """
     def __init__(
         self, 
         dataset: typing.Union[str, list, pd.DataFrame],
@@ -30,18 +42,6 @@ class DataProvider(tf.keras.utils.Sequence):
         skip_validation: bool = False,
         limit: int = None,
         ) -> None:
-        """
-        Args:
-            dataset (str, list, pd.DataFrame): Path to dataset, list of data or pandas dataframe of data.
-            data_preprocessors (list): List of data preprocessors. (e.g. [read image, read audio, etc.])
-            batch_size (int, optional): The number of samples to include in each batch. Defaults to 4.
-            shuffle (bool): Whether to shuffle the data. Defaults to True.
-            initial_epoch (int): The initial epoch. Defaults to 1.
-            augmentors (list, optional): List of augmentor functions. Defaults to None.
-            transformers (list, optional): List of transformer functions. Defaults to None.
-            skip_validation (bool, optional): Whether to skip validation. Defaults to False.
-            limit (int, optional): Limit the number of samples in the dataset. Defaults to None.
-        """
         super().__init__()
         self._dataset = self.validate(dataset, skip_validation, limit)
         self._data_preprocessors = data_preprocessors

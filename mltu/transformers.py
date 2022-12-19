@@ -14,6 +14,12 @@ class ExpandDims(Transformer):
         return np.expand_dims(data, -1), label
 
 class ImageResizer(Transformer):
+    """Resize image to (width, height)
+    
+    Args:
+        width (int): Width of image
+        height (int): Height of image
+    """
     def __init__(self, width: int, height: int):
         self._width = width
         self._height = height
@@ -22,6 +28,11 @@ class ImageResizer(Transformer):
         return cv2.resize(data, (self._width, self._height)), label
 
 class LabelIndexer(Transformer):
+    """Convert label to index by vocab
+    
+    Args:
+        vocab (typing.List[str]): List of characters in vocab
+    """
     def __init__(self, vocab: typing.List[str]):
         self.vocab = vocab
 
@@ -29,6 +40,12 @@ class LabelIndexer(Transformer):
         return data, np.array([self.vocab.index(l) for l in label])
 
 class LabelPadding(Transformer):
+    """Pad label to max_word_length
+    
+    Args:
+        max_word_length (int): Maximum length of label
+        padding_value (int): Value to pad
+    """
     def __init__(self, max_word_length: int, padding_value: int):
         self.max_word_length = max_word_length
         self.padding_value = padding_value

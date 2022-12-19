@@ -1,6 +1,7 @@
 import cv2
 
 class ImageReader:
+    """Read image with cv2 from path and return image and label"""
     def __init__(self, method: int = cv2.IMREAD_COLOR, *args, **kwargs):
         self._method = method
 

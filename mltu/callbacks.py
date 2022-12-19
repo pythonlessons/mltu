@@ -4,6 +4,11 @@ from tensorflow.keras.callbacks import Callback
 import logging
 
 class Model2onnx(Callback):
+    """Converts the model to onnx format after training is finished.
+    
+    Args:
+        saved_model_path (str): Path to the saved .h5 model.
+    """
     try:
         import tf2onnx
     except ImportError:
@@ -18,6 +23,13 @@ class Model2onnx(Callback):
         self.tf2onnx.convert.from_keras(self.model, output_path=self.saved_model_path.replace(".h5", ".onnx"), )
 
 class TrainLogger(Callback):
+    """Logs training metrics to a file.
+    
+    Args:
+        log_path (str): Path to the directory where the log file will be saved.
+        log_file (str, optional): Name of the log file. Defaults to 'logs.log'.
+        logLevel (int, optional): Logging level. Defaults to logging.INFO.
+    """
     def __init__(self, log_path: str, log_file: str='logs.log', logLevel=logging.INFO) -> None:
         super().__init__()
         self.log_path = log_path

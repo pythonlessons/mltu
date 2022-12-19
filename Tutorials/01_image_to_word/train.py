@@ -42,7 +42,7 @@ def read_annotation_file(annotation_path):
 train_dataset, train_vocab, max_train_len = read_annotation_file(train_annotation_path)
 val_dataset, val_vocab, max_val_len = read_annotation_file(val_annotation_path)
 
-# Save vocab and amximum text length to configs
+# Save vocab and maximum text length to configs
 configs.vocab = "".join(train_vocab)
 configs.max_text_length = max(max_train_len, max_val_len)
 configs.save()
@@ -101,9 +101,9 @@ model2onnx = Model2onnx(f"{configs.model_path}/model.h5")
 model.fit(
     train_data_provider,
     validation_data=val_data_provider,
-    epochs=100,
+    epochs=configs.train_epochs,
     callbacks=[earlystopper, checkpoint, trainLogger, reduceLROnPlat, tb_callback, model2onnx],
-    workers=20
+    workers=configs.train_workers
 )
 
 # Save training and validation datasets as csv files
