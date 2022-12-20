@@ -1,25 +1,32 @@
+import os
 from setuptools import setup
 
-import codecs
-import os.path
-from pathlib import Path
+DIR = os.path.abspath(os.path.dirname(__file__))
 
-def read(rel_path):
-    here = os.path.abspath(os.path.dirname(__file__))
-    with codecs.open(os.path.join(here, rel_path), 'r') as fp:
-        return fp.read()
+with open(os.path.join(DIR, 'README.md')) as fh:
+    long_description = fh.read()
 
-def get_version(rel_path):
-    for line in read(rel_path).splitlines():
-        if line.startswith('__version__'):
-            delim = '"' if '"' in line else "'"
-            return line.split(delim)[1]
-    else:
-        raise RuntimeError("Unable to find version string.")
+with open(os.path.join(DIR, 'requirements.txt')) as fh:
+    requirements = fh.read().splitlines()
 
-# read the contents of your README file
-this_directory = Path(__file__).parent
-long_description = (this_directory / "README.md").read_text()
+def get_version(initpath: str) -> str:
+    """ Get from the init of the source code the version string
+
+    Params:
+        initpath (str): path to the init file of the python package relative to the setup file
+
+    Returns:
+        str: The version string in the form 0.0.1
+    """
+
+    path = os.path.join(os.path.dirname(__file__), initpath)
+
+    with open(path, "r") as handle:
+        for line in handle.read().splitlines():
+            if line.startswith("__version__"):
+                return line.split("=")[1].strip().strip("\"'")
+        else:
+            raise RuntimeError("Unable to find version string.")
 
 setup(
     name = 'mltu',
@@ -29,4 +36,11 @@ setup(
     url='https://pylessons.com/',
     author='PyLessons',
     author_email='pythonlessons0@gmail.com',
+    install_requires=requirements,
+    extras_require={
+        'gpu': ['onnxruntime-gpu'],
+    },
+    python_requires='>=3',
+    packages = ['mltu'],
+    include_package_data=True,
 )

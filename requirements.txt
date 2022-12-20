@@ -1,9 +1,9 @@
-stow
-pyyaml
+stow>=1.1.6
+PyYAML>=6.0
 tqdm
+pandas
 numpy
 opencv-python
-tensorflow==2.10.*
-pandas
 tf2onnx
 onnxruntime # onnxruntime-gpu for GPU support
+tensorflow<=2.10.1
