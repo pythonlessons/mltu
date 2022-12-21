@@ -1,24 +1,16 @@
 # MLTU - Machine Learning Training Utilities (TensorFlow)
 Machine Learning Training Utilities with TensorFlow 2.* and Python 3
 
-## Installation:
-Clone the repository and install the requirements:
+# Installation:
+To use MLTU in your own project, you can install it from PyPI:
 ```bash
-git clone https://github.com/pythonlessons/mltu.git
+pip install mltu
 ```
-cd into the repository
+When running tutorials, it's necessary to install mltu for a specific tutorial, for example:
 ```bash
-cd mltu
+pip install mltu==0.1.3
 ```
-Install the requirements:
-```bash
-pip install -r requirements.txt
-```
-
-Install the mltu package
-```bash
-pip install .
-```
+Each tutorial has its own requirements.txt file for a specific mltu version. As this project progress, the newest versions may have breaking changes, so it's recommended to use the same version as in the tutorial.
 
 # Tutorials and Examples:
-...
+1. [Text Recognition With TensorFlow and CTC network](https://pylessons.com/ctc-text-recognition), code in ```Tutorials\01_image_to_word``` folder;

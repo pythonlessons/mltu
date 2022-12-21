@@ -43,4 +43,9 @@ setup(
     python_requires='>=3',
     packages = ['mltu'],
     include_package_data=True,
+    project_urls={
+        'Source': 'https://github.com/pythonlessons/mltu/',
+        'Tracker': 'https://github.com/pythonlessons/mltu/issues',
+    },
+    description="Machine Learning Training Utilities (MLTU) for TenosrFlow",
 )

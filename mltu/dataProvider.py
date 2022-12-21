@@ -104,7 +104,16 @@ class DataProvider(tf.keras.utils.Sequence):
             raise TypeError("Dataset must be a path, list or pandas dataframe.")
 
     def split(self, split: float = 0.9, shuffle: bool = True) -> typing.Tuple[tf.keras.utils.Sequence, tf.keras.utils.Sequence]:
-        """ Split the dataset into training and validation sets """
+        """ Split current data provider into training and validation sets 
+        
+        Args:
+            split (float, optional): The split ratio. Defaults to 0.9.
+            shuffle (bool, optional): Whether to shuffle the dataset. Defaults to True.
+
+        Returns:
+            train_dataset (tf.keras.utils.Sequence): The training dataset.
+            val_dataset (tf.keras.utils.Sequence): The validation dataset.
+        """
         if shuffle:
             np.random.shuffle(self._dataset)
             
