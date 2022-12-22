@@ -53,7 +53,7 @@ data_provider = DataProvider(
         ],
 )
 
-train_data_provider, val_data_provider = data_provider.split()
+train_data_provider, val_data_provider = data_provider.split(split = 0.9)
 
 train_data_provider.augmentors = [RandomBrightness(), RandomRotate(), RandomErodeDilate()]
 

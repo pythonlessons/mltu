@@ -1,6 +1,3 @@
-# https://github.com/rajesh-bhat/spark-ai-summit-2020-text-extraction
-# https://github.com/tensorflow/benchmarks/blob/master/scripts/tf_cnn_benchmarks/models/experimental/deepspeech.py
-# https://www.robots.ox.ac.uk/~vgg/data/text/#sec-chars
 import stow
 from tqdm import tqdm
 import tensorflow as tf

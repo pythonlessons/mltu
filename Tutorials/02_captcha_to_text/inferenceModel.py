@@ -21,7 +21,6 @@ class ImageToWordModel(OnnxInferenceModel):
 
         return text
 
-
 if __name__ == "__main__":
     import pandas as pd
     from tqdm import tqdm
@@ -41,12 +40,6 @@ if __name__ == "__main__":
 
         cer = get_cer(prediction_text, label)
         print(f"Image: {image_path}, Label: {label}, Prediction: {prediction_text}, CER: {cer}")
-
-        # resize image by 3 times for visualization
-        # image = cv2.resize(image, (image.shape[1] * 3, image.shape[0] * 3))
-        # cv2.imshow(prediction_text, image)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
 
         accum_cer.append(cer)
 
