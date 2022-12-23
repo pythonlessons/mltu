@@ -28,6 +28,7 @@ def download_and_unzip(url, extract_to='Datasets'):
 if not stow.exists(stow.join('Datasets', 'captcha_images_v2')):
     download_and_unzip('https://github.com/AakashKumarNain/CaptchaCracker/raw/master/captcha_images_v2.zip', extract_to='Datasets')
 
+# Create a list of all the images and labels in the dataset
 dataset, vocab, max_len = [], set(), 0
 for file in stow.ls(stow.join('Datasets', 'captcha_images_v2')):
     dataset.append([stow.relpath(file), file.name])
@@ -41,6 +42,7 @@ configs.vocab = "".join(vocab)
 configs.max_text_length = max_len
 configs.save()
 
+# Create a data provider for the dataset
 data_provider = DataProvider(
     dataset=dataset,
     skip_validation=True,
@@ -52,9 +54,10 @@ data_provider = DataProvider(
         LabelPadding(max_word_length=configs.max_text_length, padding_value=len(configs.vocab))
         ],
 )
-
+# Split the dataset into training and validation sets
 train_data_provider, val_data_provider = data_provider.split(split = 0.9)
 
+# Augment training data with random brightness, rotation and erode/dilate
 train_data_provider.augmentors = [RandomBrightness(), RandomRotate(), RandomErodeDilate()]
 
 model = train_model(

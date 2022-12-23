@@ -99,32 +99,44 @@ class DataProvider(tf.keras.utils.Sequence):
             raise TypeError("Dataset must be a path, list or pandas dataframe.")
 
     def split(self, split: float = 0.9, shuffle: bool = True) -> typing.Tuple[tf.keras.utils.Sequence, tf.keras.utils.Sequence]:
-        """ Split current data provider into training and validation sets 
+        """ Split current data provider into training and validation data providers. 
         
         Args:
             split (float, optional): The split ratio. Defaults to 0.9.
             shuffle (bool, optional): Whether to shuffle the dataset. Defaults to True.
 
         Returns:
-            train_dataset (tf.keras.utils.Sequence): The training dataset.
-            val_dataset (tf.keras.utils.Sequence): The validation dataset.
+            train_data_provider (tf.keras.utils.Sequence): The training data provider.
+            val_data_provider (tf.keras.utils.Sequence): The validation data provider.
         """
         if shuffle:
             np.random.shuffle(self._dataset)
             
-        train_dataset, val_dataset = copy.copy(self), copy.copy(self)
-        train_dataset._dataset = self._dataset[:int(len(self._dataset) * split)]
-        val_dataset._dataset = self._dataset[int(len(self._dataset) * split):]
+        train_data_provider, val_data_provider = copy.copy(self), copy.copy(self)
+        train_data_provider._dataset = self._dataset[:int(len(self._dataset) * split)]
+        val_data_provider._dataset = self._dataset[int(len(self._dataset) * split):]
 
-        return train_dataset, val_dataset
+        return train_data_provider, val_data_provider
 
-    def to_csv(self, path: str) -> None:
-        """ Save the dataset to a csv file """
+    def to_csv(self, path: str, index: bool=False) -> None:
+        """ Save the dataset to a csv file 
+
+        Args:
+            path (str): The path to save the csv file.
+            index (bool, optional): Whether to save the index. Defaults to False.
+        """
         df = pd.DataFrame(self._dataset)
-        df.to_csv(path, index=False)
+        df.to_csv(path, index=index)
 
     def get_batch_annotations(self, index: int) -> typing.List:
-        """ Returns a batch of annotations by index"""
+        """ Returns a batch of annotations by batch index in the dataset
+
+        Args:
+            index (int): The index of the batch in 
+
+        Returns:
+            batch_annotations (list): A list of batch annotations
+        """
         self._step = index
         start_index = index * self._batch_size
 
@@ -137,7 +149,7 @@ class DataProvider(tf.keras.utils.Sequence):
         return batch_annotations
 
     def __getitem__(self, index: int):
-        """ Returns a batch of data by index"""
+        """ Returns a batch of data by batch index"""
         dataset_batch = self.get_batch_annotations(index)
         
         # First read and preprocess the batch data

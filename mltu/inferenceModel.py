@@ -3,9 +3,6 @@ import stow
 import numpy as np
 import onnxruntime as ort
 
-import tf2onnx
-import tensorflow as tf
-
 class OnnxInferenceModel:
     """ Base class for all inference models that use onnxruntime """
     def __init__(
@@ -19,6 +16,7 @@ class OnnxInferenceModel:
         Args:
             model_path (str, optional): Path to the model. Defaults to "".
             force_cpu (bool, optional): Force the model to run on CPU or GPU. Defaults to GPU.
+            default_model_name (str, optional): Default model name. Defaults to "model.onnx".
         """
         self.model_path = model_path
         self.force_cpu = force_cpu
