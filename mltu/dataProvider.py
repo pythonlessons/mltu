@@ -1,15 +1,10 @@
 import os
 import copy
 import typing
-# import librosa
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import tensorflow as tf
-# from scipy import signal
-# from scipy.io import wavfile
-
-from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 import logging
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s')
@@ -104,23 +99,44 @@ class DataProvider(tf.keras.utils.Sequence):
             raise TypeError("Dataset must be a path, list or pandas dataframe.")
 
     def split(self, split: float = 0.9, shuffle: bool = True) -> typing.Tuple[tf.keras.utils.Sequence, tf.keras.utils.Sequence]:
-        """ Split the dataset into training and validation sets """
+        """ Split current data provider into training and validation data providers. 
+        
+        Args:
+            split (float, optional): The split ratio. Defaults to 0.9.
+            shuffle (bool, optional): Whether to shuffle the dataset. Defaults to True.
+
+        Returns:
+            train_data_provider (tf.keras.utils.Sequence): The training data provider.
+            val_data_provider (tf.keras.utils.Sequence): The validation data provider.
+        """
         if shuffle:
             np.random.shuffle(self._dataset)
             
-        train_dataset, val_dataset = copy.copy(self), copy.copy(self)
-        train_dataset._dataset = self._dataset[:int(len(self._dataset) * split)]
-        val_dataset._dataset = self._dataset[int(len(self._dataset) * split):]
+        train_data_provider, val_data_provider = copy.copy(self), copy.copy(self)
+        train_data_provider._dataset = self._dataset[:int(len(self._dataset) * split)]
+        val_data_provider._dataset = self._dataset[int(len(self._dataset) * split):]
 
-        return train_dataset, val_dataset
+        return train_data_provider, val_data_provider
 
-    def to_csv(self, path: str) -> None:
-        """ Save the dataset to a csv file """
+    def to_csv(self, path: str, index: bool=False) -> None:
+        """ Save the dataset to a csv file 
+
+        Args:
+            path (str): The path to save the csv file.
+            index (bool, optional): Whether to save the index. Defaults to False.
+        """
         df = pd.DataFrame(self._dataset)
-        df.to_csv(path, index=False)
+        df.to_csv(path, index=index)
 
     def get_batch_annotations(self, index: int) -> typing.List:
-        """ Returns a batch of annotations by index"""
+        """ Returns a batch of annotations by batch index in the dataset
+
+        Args:
+            index (int): The index of the batch in 
+
+        Returns:
+            batch_annotations (list): A list of batch annotations
+        """
         self._step = index
         start_index = index * self._batch_size
 
@@ -133,7 +149,7 @@ class DataProvider(tf.keras.utils.Sequence):
         return batch_annotations
 
     def __getitem__(self, index: int):
-        """ Returns a batch of data by index"""
+        """ Returns a batch of data by batch index"""
         dataset_batch = self.get_batch_annotations(index)
         
         # First read and preprocess the batch data
@@ -142,6 +158,7 @@ class DataProvider(tf.keras.utils.Sequence):
             for preprocessor in self._data_preprocessors:
                 data, annotation = preprocessor(data, annotation)
             
+            # If data is None, remove it from the dataset
             if data is None:
                 self._dataset.remove(dataset_batch[index])
                 continue
@@ -160,88 +177,3 @@ class DataProvider(tf.keras.utils.Sequence):
                 batch_data, batch_annotations = zip(*[transformer(data, annotation) for data, annotation in zip(batch_data, batch_annotations)])
 
         return np.array(batch_data), np.array(batch_annotations)
-
-class SoundDataProvider(DataProvider):
-    def __init__(
-        self, 
-        vocab: typing.List[str] = None,
-        *args,
-        **kwargs
-        ) -> None:
-        # Intherit all arguments from parent class
-        # super().__init__(dataset)
-        # TensorFlowDataProvider.__init__(self, *args, **kwargs)
-        super().__init__(*args, **kwargs)
-        self.vocab = vocab
-
-        # Mapping characters to integers
-        self.char_to_num = tf.keras.layers.StringLookup(vocabulary=self.vocab, oov_token="")
-        # Mapping integers back to original characters
-        self.num_to_char = tf.keras.layers.StringLookup(
-            vocabulary=self.char_to_num.get_vocabulary(), oov_token="", invert=True
-        )
-
-        # An integer scalar Tensor. The window length in samples.
-        self.frame_length = 256
-        # An integer scalar Tensor. The number of samples to step.
-        self.frame_step = 160
-        # An integer scalar Tensor. The size of the FFT to apply.
-        # If not provided, uses the smallest power of 2 enclosing frame_length.
-        self.fft_length = 384
-
-    def __getitem__(self, index: int):
-        """ Returns a batch of data by index"""
-        batch_annotations = self.get_batch_annotations(index)
-
-        data, labels = [], []
-        # bzz =[]
-        for file_path, label in batch_annotations:
-
-            # x, sr = librosa.load(file_path, sr=44100)
-            # X = librosa.stft(x)
-            # Xdb = librosa.amplitude_to_db(abs(X))
-            # bzz.append(Xdb)
-
-            # sample_rate, samples = wavfile.read(file_path)
-            # frequencies, times, _spectrogram = signal.spectrogram(samples, sample_rate)
-
-            # 1. Read wav file
-            file = tf.io.read_file(file_path)
-            # 2. Decode the wav file
-            audio, _ = tf.audio.decode_wav(file)
-            audio = tf.squeeze(audio, axis=-1)
-            # 3. Change type to float
-            audio = tf.cast(audio, tf.float32)
-            # 4. Get the spectrogram
-            spectrogram = tf.signal.stft(audio, frame_length=self.frame_length, frame_step=self.frame_step, fft_length=self.fft_length)
-            # 5. We only need the magnitude, which can be derived by applying tf.abs
-            spectrogram = tf.abs(spectrogram)
-            spectrogram = tf.math.pow(spectrogram, 0.5)
-            # 6. normalisation
-            means = tf.math.reduce_mean(spectrogram, 1, keepdims=True)
-            stddevs = tf.math.reduce_std(spectrogram, 1, keepdims=True)
-            spectrogram = (spectrogram - means) / (stddevs + 1e-10)
-            ###########################################
-            ##  Process the label
-            ##########################################
-            # 7. Convert label to Lower case
-            label = tf.strings.lower(label)
-            # 8. Split the label
-            label = tf.strings.unicode_split(label, input_encoding="UTF-8")
-            # 9. Map the characters in label to numbers
-            label = self.char_to_num(label)
-            # 10. Return a dict as our model is expecting two inputs
-
-            # final_labels = pad_sequences([label], maxlen=len(label), padding='post', value=len(self.vocab))[0]
-
-            data.append(spectrogram.numpy())
-            labels.append(label.numpy())
-
-        padded_data = pad_sequences(data, maxlen=max([len(d) for d in data]), padding='post', value=0, dtype='float32')
-        padded_labels = pad_sequences(labels, maxlen=max([len(l) for l in labels]), padding='post', value=len(self.vocab))
-
-        if self._transformers:
-            for transformer in self._transformers:
-                padded_data, padded_labels = zip(*[transformer(data, label) for data, label in zip(padded_data, padded_labels)])
-
-        return np.array(padded_data), np.array(padded_labels)
