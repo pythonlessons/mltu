@@ -16,24 +16,62 @@ from model import train_model
 from configs import ModelConfigs
 
 import stow
+import tarfile
+from tqdm import tqdm
 from urllib.request import urlopen
 from io import BytesIO
 from zipfile import ZipFile
 
-def download_and_unzip(url, extract_to='Datasets'):
+def download_and_unzip(url, extract_to='Datasets', chunk_size=1024*1024):
     http_response = urlopen(url)
-    zipfile = ZipFile(BytesIO(http_response.read()))
+
+    data = b''
+    iterations = http_response.length // chunk_size + 1
+    for _ in tqdm(range(iterations)):
+        data += http_response.read(chunk_size)
+
+    zipfile = ZipFile(BytesIO(data))
     zipfile.extractall(path=extract_to)
 
-if not stow.exists(stow.join('Datasets', 'captcha_images_v2')):
-    download_and_unzip('https://github.com/AakashKumarNain/CaptchaCracker/raw/master/captcha_images_v2.zip', extract_to='Datasets')
+dataset_path = stow.join('Datasets', 'IAM_Words')
+if not stow.exists(dataset_path):
+    download_and_unzip('https://git.io/J0fjL', extract_to='Datasets')
 
-# Create a list of all the images and labels in the dataset
+    words = ZipFile.open(name=stow.join(dataset_path, "words.tgz"))
+    file = tarfile.open(stow.join(dataset_path, "words.tgz"))
+    file.extractall(stow.join(dataset_path, "words"))
+
 dataset, vocab, max_len = [], set(), 0
-for file in stow.ls(stow.join('Datasets', 'captcha_images_v2')):
-    dataset.append([stow.relpath(file), file.name])
-    vocab.update(list(file.name))
-    max_len = max(max_len, len(file.name))
+
+# Preprocess the dataset by the specific IAM_Words dataset file structure
+words = open(stow.join(dataset_path, "words.txt"), "r").readlines()
+for line in tqdm(words):
+    if line.startswith("#"):
+        continue
+
+    line_split = line.split(" ")
+    if line_split[1] == "err":
+        continue
+
+    folder1 = line_split[0][:3]
+    folder2 = line_split[0][:8]
+    file_name = line_split[0] + ".png"
+    label = line_split[-1].rstrip('\n')
+
+    rel_path = stow.join(dataset_path, "words", folder1, folder2, file_name)
+    if not stow.exists(rel_path):
+        continue
+
+    dataset.append([rel_path, label])
+    vocab.update(list(label))
+    max_len = max(max_len, len(label))
+
+# # Create a list of all the images and labels in the dataset
+# dataset, vocab, max_len = [], set(), 0
+# for file in stow.ls(stow.join('Datasets', 'captcha_images_v2')):
+#     dataset.append([stow.relpath(file), file.name])
+#     vocab.update(list(file.name))
+#     max_len = max(max_len, len(file.name))
 
 configs = ModelConfigs()
 
@@ -49,11 +87,20 @@ data_provider = DataProvider(
     batch_size=configs.batch_size,
     data_preprocessors=[ImageReader()],
     transformers=[
-        ImageResizer(configs.width, configs.height),
+        ImageResizer(configs.width, configs.height, keep_aspect_ratio=True),
         LabelIndexer(configs.vocab),
         LabelPadding(max_word_length=configs.max_text_length, padding_value=len(configs.vocab))
         ],
 )
+
+# import cv2
+# for batch_data in data_provider:
+#     images, labels = batch_data
+#     for image, label in zip(images, labels):
+#         cv2.imshow("image", image)
+#         cv2.waitKey(0)
+#         cv2.destroyAllWindows()
+
 # Split the dataset into training and validation sets
 train_data_provider, val_data_provider = data_provider.split(split = 0.9)
 
@@ -74,15 +121,13 @@ model.compile(
     run_eagerly=False
 )
 model.summary(line_length=110)
-# Define path to save the model
-stow.mkdir(configs.model_path)
 
 # Define callbacks
-earlystopper = EarlyStopping(monitor='val_CER', patience=40, verbose=1)
+earlystopper = EarlyStopping(monitor='val_CER', patience=20, verbose=1)
 checkpoint = ModelCheckpoint(f"{configs.model_path}/model.h5", monitor='val_CER', verbose=1, save_best_only=True, mode='min')
 trainLogger = TrainLogger(configs.model_path)
 tb_callback = TensorBoard(f'{configs.model_path}/logs', update_freq=1)
-reduceLROnPlat = ReduceLROnPlateau(monitor='val_CER', factor=0.9, min_delta=1e-10, patience=20, verbose=1, mode='auto')
+reduceLROnPlat = ReduceLROnPlateau(monitor='val_CER', factor=0.9, min_delta=1e-10, patience=10, verbose=1, mode='auto')
 model2onnx = Model2onnx(f"{configs.model_path}/model.h5")
 
 # Train the model

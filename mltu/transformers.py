@@ -19,12 +19,33 @@ class ImageResizer(Transformer):
     Args:
         width (int): Width of image
         height (int): Height of image
+        keep_aspect_ratio (bool): Whether to keep aspect ratio of image
+        padding_color (typing.Tuple[int]): Color to pad image
     """
-    def __init__(self, width: int, height: int):
+    def __init__(self, width: int, height: int, keep_aspect_ratio: bool=False, padding_color: typing.Tuple[int]=(0, 0, 0)):
         self._width = width
         self._height = height
+        self._keep_aspect_ratio = keep_aspect_ratio
+        self._padding_color = padding_color
 
     def __call__(self, data: np.ndarray, label: np.ndarray):
+        # Maintains aspect ratio and resizes with padding.
+        if self._keep_aspect_ratio:
+            height, width = data.shape[:2]
+            ratio = min(self._width / width, self._height / height)
+            new_w, new_h = int(width * ratio), int(height * ratio)
+
+            image = cv2.resize(data, (new_w, new_h))
+            delta_w = self._width - new_w
+            delta_h = self._height - new_h
+            top, bottom = delta_h//2, delta_h-(delta_h//2)
+            left, right = delta_w//2, delta_w-(delta_w//2)
+
+            image = cv2.copyMakeBorder(image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=self._padding_color)
+
+            return image, label
+
+        # Resizes without maintaining aspect ratio.
         return cv2.resize(data, (self._width, self._height)), label
 
 class LabelIndexer(Transformer):
