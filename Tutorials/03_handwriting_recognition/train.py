@@ -10,7 +10,7 @@ from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding
 from mltu.augmentors import RandomBrightness, RandomRotate, RandomErodeDilate
 from mltu.losses import CTCloss
 from mltu.callbacks import Model2onnx, TrainLogger
-from mltu.metrics import CWERMetric
+from mltu.metrics import CERMetric
 
 from model import train_model
 from configs import ModelConfigs
@@ -65,12 +65,6 @@ for line in tqdm(words):
     vocab.update(list(label))
     max_len = max(max_len, len(label))
 
-# # Create a list of all the images and labels in the dataset
-# dataset, vocab, max_len = [], set(), 0
-# for file in stow.ls(stow.join('Datasets', 'captcha_images_v2')):
-#     dataset.append([stow.relpath(file), file.name])
-#     vocab.update(list(file.name))
-#     max_len = max(max_len, len(file.name))
 
 configs = ModelConfigs()
 
@@ -86,19 +80,11 @@ data_provider = DataProvider(
     batch_size=configs.batch_size,
     data_preprocessors=[ImageReader()],
     transformers=[
-        ImageResizer(configs.width, configs.height, keep_aspect_ratio=True),
+        ImageResizer(configs.width, configs.height, keep_aspect_ratio=False),
         LabelIndexer(configs.vocab),
         LabelPadding(max_word_length=configs.max_text_length, padding_value=len(configs.vocab))
         ],
 )
-
-# import cv2
-# for batch_data in data_provider:
-#     images, labels = batch_data
-#     for image, label in zip(images, labels):
-#         cv2.imshow("image", image)
-#         cv2.waitKey(0)
-#         cv2.destroyAllWindows()
 
 # Split the dataset into training and validation sets
 train_data_provider, val_data_provider = data_provider.split(split = 0.9)
@@ -116,7 +102,7 @@ model = train_model(
 model.compile(
     optimizer=tf.keras.optimizers.Adam(learning_rate=configs.learning_rate), 
     loss=CTCloss(), 
-    metrics=[CWERMetric()],
+    metrics=[CERMetric(padding_token=len(configs.vocab))],
     run_eagerly=False
 )
 model.summary(line_length=110)

@@ -13,8 +13,7 @@ class ImageToWordModel(OnnxInferenceModel):
         self.resizer = ImageResizer(self.input_shape[1], self.input_shape[0], keep_aspect_ratio=True)
 
     def predict(self, image: np.ndarray):
-        # image = cv2.resize(image, self.input_shape[:2][::-1])
-        image, _ = self.resizer(image, None)
+        image = cv2.resize(image, self.input_shape[:2][::-1])
 
         image_pred = np.expand_dims(image, axis=0).astype(np.float32)
 
@@ -29,11 +28,11 @@ if __name__ == "__main__":
     from tqdm import tqdm
     from mltu.configs import BaseModelConfigs
 
-    configs = BaseModelConfigs.load("Models/03_handwriting_recognition/202212271721/configs.yaml")
+    configs = BaseModelConfigs.load("Models/03_handwriting_recognition/202212281714/configs.yaml")
 
     model = ImageToWordModel(model_path=configs.model_path, char_list=configs.vocab)
 
-    df = pd.read_csv("Models/03_handwriting_recognition/202212271721/val.csv").values.tolist()
+    df = pd.read_csv("Models/03_handwriting_recognition/202212281714/val.csv").values.tolist()
 
     accum_cer = []
     for image_path, label in tqdm(df):
