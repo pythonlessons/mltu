@@ -37,7 +37,6 @@ dataset_path = stow.join('Datasets', 'IAM_Words')
 if not stow.exists(dataset_path):
     download_and_unzip('https://git.io/J0fjL', extract_to='Datasets')
 
-    words = ZipFile.open(name=stow.join(dataset_path, "words.tgz"))
     file = tarfile.open(stow.join(dataset_path, "words.tgz"))
     file.extractall(stow.join(dataset_path, "words"))
 
