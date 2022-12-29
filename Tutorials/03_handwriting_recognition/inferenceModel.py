@@ -28,11 +28,11 @@ if __name__ == "__main__":
     from tqdm import tqdm
     from mltu.configs import BaseModelConfigs
 
-    configs = BaseModelConfigs.load("Models/03_handwriting_recognition/202212281714/configs.yaml")
+    configs = BaseModelConfigs.load("Models/03_handwriting_recognition/202212290905/configs.yaml")
 
     model = ImageToWordModel(model_path=configs.model_path, char_list=configs.vocab)
 
-    df = pd.read_csv("Models/03_handwriting_recognition/202212281714/val.csv").values.tolist()
+    df = pd.read_csv("Models/03_handwriting_recognition/202212290905/val.csv").values.tolist()
 
     accum_cer = []
     for image_path, label in tqdm(df):

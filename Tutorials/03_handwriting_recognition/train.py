@@ -10,7 +10,7 @@ from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding
 from mltu.augmentors import RandomBrightness, RandomRotate, RandomErodeDilate
 from mltu.losses import CTCloss
 from mltu.callbacks import Model2onnx, TrainLogger
-from mltu.metrics import CERMetric
+from mltu.metrics import CWERMetric
 
 from model import train_model
 from configs import ModelConfigs
@@ -102,7 +102,7 @@ model = train_model(
 model.compile(
     optimizer=tf.keras.optimizers.Adam(learning_rate=configs.learning_rate), 
     loss=CTCloss(), 
-    metrics=[CERMetric(padding_token=len(configs.vocab))],
+    metrics=[CWERMetric(padding_token=len(configs.vocab))],
     run_eagerly=False
 )
 model.summary(line_length=110)
