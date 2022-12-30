@@ -65,7 +65,7 @@ for line in tqdm(words):
     vocab.update(list(label))
     max_len = max(max_len, len(label))
 
-
+# Create a ModelConfigs object to store model configurations
 configs = ModelConfigs()
 
 # Save vocab and maximum text length to configs

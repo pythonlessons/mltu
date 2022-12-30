@@ -4,13 +4,11 @@ import numpy as np
 
 from mltu.inferenceModel import OnnxInferenceModel
 from mltu.utils.text_utils import ctc_decoder, get_cer
-from mltu.transformers import ImageResizer
 
 class ImageToWordModel(OnnxInferenceModel):
     def __init__(self, char_list: typing.Union[str, list], *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.char_list = char_list
-        self.resizer = ImageResizer(self.input_shape[1], self.input_shape[0], keep_aspect_ratio=True)
 
     def predict(self, image: np.ndarray):
         image = cv2.resize(image, self.input_shape[:2][::-1])
@@ -42,10 +40,6 @@ if __name__ == "__main__":
 
         cer = get_cer(prediction_text, label)
         print(f"Image: {image_path}, Label: {label}, Prediction: {prediction_text}, CER: {cer}")
-
-        # cv2.imshow(label, image)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
 
         accum_cer.append(cer)
 
