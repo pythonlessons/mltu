@@ -16,13 +16,19 @@ class ExpandDims(Transformer):
 class ImageResizer(Transformer):
     """Resize image to (width, height)
     
-    Args:
+    Attributes:
         width (int): Width of image
         height (int): Height of image
         keep_aspect_ratio (bool): Whether to keep aspect ratio of image
         padding_color (typing.Tuple[int]): Color to pad image
     """
-    def __init__(self, width: int, height: int, keep_aspect_ratio: bool=False, padding_color: typing.Tuple[int]=(0, 0, 0)):
+    def __init__(
+        self, 
+        width: int, 
+        height: int, 
+        keep_aspect_ratio: bool=False, 
+        padding_color: typing.Tuple[int]=(0, 0, 0)
+        ) -> None:
         self._width = width
         self._height = height
         self._keep_aspect_ratio = keep_aspect_ratio
@@ -51,10 +57,13 @@ class ImageResizer(Transformer):
 class LabelIndexer(Transformer):
     """Convert label to index by vocab
     
-    Args:
+    Attributes:
         vocab (typing.List[str]): List of characters in vocab
     """
-    def __init__(self, vocab: typing.List[str]):
+    def __init__(
+        self, 
+        vocab: typing.List[str]
+        ) -> None:
         self.vocab = vocab
 
     def __call__(self, data: np.ndarray, label: np.ndarray):
@@ -63,13 +72,27 @@ class LabelIndexer(Transformer):
 class LabelPadding(Transformer):
     """Pad label to max_word_length
     
-    Args:
+    Attributes:
         max_word_length (int): Maximum length of label
         padding_value (int): Value to pad
     """
-    def __init__(self, max_word_length: int, padding_value: int):
+    def __init__(
+        self, 
+        max_word_length: int, 
+        padding_value: int
+        ) -> None:
         self.max_word_length = max_word_length
         self.padding_value = padding_value
 
     def __call__(self, data: np.ndarray, label: np.ndarray):
         return data, np.pad(label, (0, self.max_word_length - len(label)), 'constant', constant_values=self.padding_value)
+
+class ImageShowCV2(Transformer):
+    """Show image for visual inspection
+    """
+    def __call__(self, data: np.ndarray, label: np.ndarray):
+        cv2.imshow('image', data)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+        return data, label

@@ -6,8 +6,8 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, T
 
 from mltu.dataProvider import DataProvider
 from mltu.preprocessors import ImageReader
-from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding
-from mltu.augmentors import RandomBrightness, RandomRotate, RandomErodeDilate
+from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding, ImageShowCV2
+from mltu.augmentors import RandomBrightness, RandomRotate, RandomErodeDilate, RandomSharpen
 from mltu.losses import CTCloss
 from mltu.callbacks import Model2onnx, TrainLogger
 from mltu.metrics import CWERMetric
@@ -82,7 +82,7 @@ data_provider = DataProvider(
     transformers=[
         ImageResizer(configs.width, configs.height, keep_aspect_ratio=False),
         LabelIndexer(configs.vocab),
-        LabelPadding(max_word_length=configs.max_text_length, padding_value=len(configs.vocab))
+        LabelPadding(max_word_length=configs.max_text_length, padding_value=len(configs.vocab)),
         ],
 )
 
@@ -90,7 +90,12 @@ data_provider = DataProvider(
 train_data_provider, val_data_provider = data_provider.split(split = 0.9)
 
 # Augment training data with random brightness, rotation and erode/dilate
-train_data_provider.augmentors = [RandomBrightness(), RandomRotate(), RandomErodeDilate()]
+train_data_provider.augmentors = [
+    RandomBrightness(), 
+    RandomErodeDilate(),
+    RandomSharpen(),
+    RandomRotate(angle=10), 
+    ]
 
 # Creating TensorFlow model architecture
 model = train_model(
