@@ -26,7 +26,10 @@ def train_model(input_dim, output_dim, activation='leaky_relu', dropout=0.2):
 
     squeezed = layers.Reshape((x9.shape[-3] * x9.shape[-2], x9.shape[-1]))(x9)
 
-    blstm = layers.Bidirectional(layers.LSTM(128, return_sequences=True))(squeezed)
+    blstm = layers.Bidirectional(layers.LSTM(256, return_sequences=True))(squeezed)
+    blstm = layers.Dropout(dropout)(blstm)
+
+    blstm = layers.Bidirectional(layers.LSTM(64, return_sequences=True))(blstm)
     blstm = layers.Dropout(dropout)(blstm)
 
     output = layers.Dense(output_dim + 1, activation='softmax', name="output")(blstm)

@@ -78,7 +78,7 @@ class CERMetric(tf.keras.metrics.Metric):
         name: (Optional) string name of the metric instance.
         **kwargs: Additional keyword arguments.
     """
-    def __init__(self, vocabulary, name='CWER', **kwargs):
+    def __init__(self, vocabulary, name='CER', **kwargs):
         # Initialize the base Metric class
         super(CERMetric, self).__init__(name=name, **kwargs)
         
@@ -103,11 +103,12 @@ class CERMetric(tf.keras.metrics.Metric):
             tf.Tensor: The CER between the predicted labels and true labels
         """
         # Keep only valid indices in the predicted labels tensor, replacing invalid indices with padding token
-        valid_pred_indices = tf.less(pred_decoded, tf.shape(vocab)[0])
+        vocab_length = tf.cast(tf.shape(vocab)[0], tf.int64)
+        valid_pred_indices = tf.less(pred_decoded, vocab_length)
         valid_pred = tf.where(valid_pred_indices, pred_decoded, padding)
 
         # Keep only valid indices in the true labels tensor, replacing invalid indices with padding token
-        valid_true_indices = tf.less(y_true, tf.shape(vocab)[0])
+        valid_true_indices = tf.less(y_true, vocab_length)
         valid_true = tf.where(valid_true_indices, y_true, padding)
 
         # Convert the valid predicted labels tensor to a sparse tensor
@@ -186,7 +187,8 @@ class WERMetric(tf.keras.metrics.Metric):
             tf.SparseTensor: The sparse tensor with given vocabulary
         """
         # Keep only the valid indices of the dense input tensor
-        valid_indices = tf.less(dense_input, tf.shape(vocab)[0])
+        vocab_length = tf.cast(tf.shape(vocab)[0], tf.int64)
+        valid_indices = tf.less(dense_input, vocab_length)
         valid_input = tf.where(valid_indices, dense_input, padding)
 
         # Convert the valid input tensor to a ragged tensor with padding

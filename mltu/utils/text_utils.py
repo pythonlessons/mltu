@@ -82,6 +82,7 @@ def get_cer(
         return 0.0
 
     cer = errors / total
+
     return cer
 
 def get_wer(
@@ -102,20 +103,13 @@ def get_wer(
     if isinstance(target, str):
         target = target.split()
 
-    assert len(preds) == len(target), 'preds and target must have the same length'
+    errors = edit_distance(preds, target)
+    total_words = len(target)
 
-    wer = []
-    for pred, tgt in zip(preds, target):
-        errors = edit_distance(pred.split(), tgt.split())
-        total_words = len(tgt.split())
+    if total_words == 0:
+        return 0.0
 
-        if total_words == 0:
-            wer.append(0)
-            continue
-
-        wer.append(errors / total_words)
-
-    return wer
+    return errors / total_words
 
 if __name__ == '__main__':
     c1 = 'ROKAS'

@@ -26,11 +26,11 @@ if __name__ == "__main__":
     from tqdm import tqdm
     from mltu.configs import BaseModelConfigs
 
-    configs = BaseModelConfigs.load("Models/04_sentence_recognition/202301041513/configs.yaml")
+    configs = BaseModelConfigs.load("Models/04_sentence_recognition/202301060816/configs.yaml")
 
     model = ImageToWordModel(model_path=configs.model_path, char_list=configs.vocab)
 
-    df = pd.read_csv("Models/04_sentence_recognition/202301041513/val.csv").values.tolist()
+    df = pd.read_csv("Models/04_sentence_recognition/202301060816/val.csv").values.tolist()
 
     accum_cer, accum_wer = [], []
     for image_path, label in tqdm(df):

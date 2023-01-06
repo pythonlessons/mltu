@@ -69,27 +69,27 @@ class TestTextUtils(unittest.TestCase):
         # Test simple case with no errors
         preds = 'A B C'
         target = 'A B C'
-        self.assertEqual(get_wer(preds, target), [0, 0, 0])
+        self.assertEqual(get_wer(preds, target), 0)
         
         # Test simple case with one word error
         preds = 'A B C'
         target = 'A B D'
-        self.assertEqual(get_wer(preds, target), [0, 0, 1])
+        self.assertEqual(get_wer(preds, target), 1/3)
         
         # Test simple case with multiple word errors
         preds = 'A B C'
         target = 'D E F'
-        self.assertEqual(get_wer(preds, target), [1, 1, 1])
+        self.assertEqual(get_wer(preds, target), 1)
         
         # Test empty input
         preds = ""
         target = ""
-        self.assertEqual(get_wer(preds, target), [])
+        self.assertEqual(get_wer(preds, target), 0)
 
         # Test simple case with different sentence lengths
         preds = ['ABC']
         target = ['ABC DEF']
-        self.assertEqual(get_wer(preds, target), [1/2])
+        self.assertEqual(get_wer(preds, target), 1)
 
 if __name__ == '__main__':
     unittest.main()
