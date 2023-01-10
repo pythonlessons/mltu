@@ -2,6 +2,11 @@ import cv2
 import typing
 import numpy as np
 
+import logging
+logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 class Transformer:
     def __init__(self, *args, **kwargs):
         pass
@@ -89,8 +94,27 @@ class LabelPadding(Transformer):
 
 class ImageShowCV2(Transformer):
     """Show image for visual inspection
+
+    Attributes:
+        verbose (bool): Whether to log label
     """
+    def __init__(self, verbose: bool=True) -> None:
+        self.verbose = verbose
+
     def __call__(self, data: np.ndarray, label: np.ndarray):
+        """ Show image for visual inspection
+
+        Args:
+            data (np.ndarray): Image data
+            label (np.ndarray): Label data
+        
+        Returns:
+            data (np.ndarray): Image data
+            label (np.ndarray): Label data (unchanged)
+        """
+        if self.verbose:
+            logger.info('Label: ', label)
+
         cv2.imshow('image', data)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
