@@ -9,12 +9,12 @@ class BaseModelConfigs:
         # get object attributes
         return self.__dict__
 
-    def save(self):
+    def save(self, name: str='configs.yaml'):
         if self.model_path is None:
             raise Exception("Model path is not specified")
 
         stow.mkdir(self.model_path)
-        with open(stow.join(self.model_path, 'configs.yaml'), 'w') as f:
+        with open(stow.join(self.model_path, name), 'w') as f:
             yaml.dump(self.serialize(), f)
 
     @staticmethod

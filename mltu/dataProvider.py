@@ -6,6 +6,9 @@ import pandas as pd
 from tqdm import tqdm
 import tensorflow as tf
 
+from .augmentors import Augmentor
+from .transformers import Transformer
+
 import logging
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 logger = logging.getLogger(__name__)
@@ -32,8 +35,8 @@ class DataProvider(tf.keras.utils.Sequence):
         batch_size: int = 4,
         shuffle: bool = True,
         initial_epoch: int = 1,
-        augmentors: typing.List[typing.Callable] = None,
-        transformers: typing.List[typing.Callable] = None,
+        augmentors: typing.List[Augmentor] = None,
+        transformers: typing.List[Transformer] = None,
         skip_validation: bool = False,
         limit: int = None,
         ) -> None:
@@ -52,6 +55,46 @@ class DataProvider(tf.keras.utils.Sequence):
     def __len__(self):
         """ Denotes the number of batches per epoch """
         return int(np.ceil(len(self._dataset) / self._batch_size))
+
+    @property
+    def augmentors(self) -> typing.List[Augmentor]:
+        """ Return augmentors """
+        return self._augmentors
+
+    @augmentors.setter
+    def augmentors(self, augmentors: typing.List[Augmentor]):
+        """ Decorator for adding augmentors to the DataProvider """
+        for augmentor in augmentors:
+            if isinstance(augmentor, Augmentor):
+                if self._augmentors is not None:
+                    self._augmentors.append(augmentor)
+                else:
+                    self._augmentors = [augmentor]
+
+            else:
+                logger.warning(f"Augmentor {augmentor} is not an instance of Augmentor.")
+
+        return self._augmentors
+
+    @property
+    def transformers(self) -> typing.List[Transformer]:
+        """ Return transformers """
+        return self._transformers
+
+    @transformers.setter
+    def transformers(self, transformers: typing.List[Transformer]):
+        """ Decorator for adding transformers to the DataProvider """
+        for transformer in transformers:
+            if isinstance(transformer, Transformer):
+                if self._transformers is not None:
+                    self._transformers.append(transformer)
+                else:
+                    self._transformers = [transformer]
+
+            else:
+                logger.warning(f"Transformer {transformer} is not an instance of Transformer.")
+
+        return self._transformers
 
     @property
     def epoch(self) -> int:
