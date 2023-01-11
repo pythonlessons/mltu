@@ -155,7 +155,7 @@ class DataProvider(tf.keras.utils.Sequence):
         if shuffle:
             np.random.shuffle(self._dataset)
             
-        train_data_provider, val_data_provider = copy.copy(self), copy.copy(self)
+        train_data_provider, val_data_provider = copy.deepcopy(self), copy.deepcopy(self)
         train_data_provider._dataset = self._dataset[:int(len(self._dataset) * split)]
         val_data_provider._dataset = self._dataset[int(len(self._dataset) * split):]
 

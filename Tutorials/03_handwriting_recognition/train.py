@@ -108,7 +108,6 @@ model.compile(
     optimizer=tf.keras.optimizers.Adam(learning_rate=configs.learning_rate), 
     loss=CTCloss(), 
     metrics=[CWERMetric(padding_token=len(configs.vocab))],
-    run_eagerly=False
 )
 model.summary(line_length=110)
 

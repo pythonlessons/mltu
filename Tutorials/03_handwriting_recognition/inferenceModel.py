@@ -43,4 +43,10 @@ if __name__ == "__main__":
 
         accum_cer.append(cer)
 
+        # resize by 4x
+        # image = cv2.resize(image, (image.shape[1] * 4, image.shape[0] * 4))
+        # cv2.showImage("Image", image)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
     print(f"Average CER: {np.average(accum_cer)}")
