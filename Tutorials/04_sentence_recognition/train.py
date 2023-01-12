@@ -18,7 +18,7 @@ from configs import ModelConfigs
 import stow
 from tqdm import tqdm
 
-# Must download and extract datasets manually from https://fki.tic.heia-fr.ch/databases/download-the-iam-handwriting-database
+# Must download and extract datasets manually from https://fki.tic.heia-fr.ch/databases/download-the-iam-handwriting-database to Datasets\IAM_Sentences
 sentences_txt_path = stow.join('Datasets', 'IAM_Sentences', 'ascii', 'sentences.txt')
 sentences_folder_path = stow.join('Datasets', 'IAM_Sentences', 'sentences')
 
@@ -63,7 +63,7 @@ data_provider = DataProvider(
     batch_size=configs.batch_size,
     data_preprocessors=[ImageReader()],
     transformers=[
-        ImageResizer(configs.width, configs.height, keep_aspect_ratio=False),
+        ImageResizer(configs.width, configs.height, keep_aspect_ratio=True),
         LabelIndexer(configs.vocab),
         LabelPadding(max_word_length=configs.max_text_length, padding_value=len(configs.vocab)),
         ],

@@ -4,6 +4,7 @@ import numpy as np
 
 from mltu.inferenceModel import OnnxInferenceModel
 from mltu.utils.text_utils import ctc_decoder, get_cer, get_wer
+from mltu.transformers import ImageResizer
 
 class ImageToWordModel(OnnxInferenceModel):
     def __init__(self, char_list: typing.Union[str, list], *args, **kwargs):
@@ -11,7 +12,7 @@ class ImageToWordModel(OnnxInferenceModel):
         self.char_list = char_list
 
     def predict(self, image: np.ndarray):
-        image = cv2.resize(image, self.input_shape[:2][::-1])
+        image = ImageResizer.resize_maintaining_aspect_ratio(image, *self.input_shape[:2][::-1])
 
         image_pred = np.expand_dims(image, axis=0).astype(np.float32)
 
