@@ -235,9 +235,15 @@ train_data_provider.to_csv(stow.join(configs.model_path, 'train.csv'))
 val_data_provider.to_csv(stow.join(configs.model_path, 'val.csv'))
 ```
 ## Training graphs
-![alt image](https://pylessons.com/media/Tutorials/TensorFlow-CAPTCHA-solver/handwriting-recognition/03_CER.png)
+Now we can analyze how the model was trained. Let's open TensorBoard and look at my CER and WER evaluation metrics. Let's type in terminal `tensorboard --logdir Models\03_handwriting_recognition\202301111911\logs.` We are not interested in the loss. This value won't tell us anything important about how it performs within the data. For this reason, we are tracking Character Error Rate: 
 
-![alt image](https://pylessons.com/media/Tutorials/TensorFlow-CAPTCHA-solver/handwriting-recognition/03_WER.png)
+![alt image](https://pylessons.com/media/Tutorials/TensorFlow-CAPTCHA-solver/handwriting-recognition/03_HWR_CER.png)
+
+And from the graph above, we can clearly see these abnormal spikes. There might be many reasons, but I mostly blame the learning rate and data. As I told you, there are dots and commas that might be very hard to recognize when they are resized. This may cause the issue. But overall, 7% CER is a great result, knowing that if we would clean up our data and optimize the model, we could get even better results!
+
+![alt image](https://pylessons.com/media/Tutorials/TensorFlow-CAPTCHA-solver/handwriting-recognition/03_HWR_WER.png)
+
+Usually, if CER is not perfect, we can't expect Word Error Rate to be better. It represents CER but at a word level.
 
 ## Test the trained model:
 We all know that all we want that our model would perform well on data it has never seen. So, to test our trained model, we'll run it on our validation data and see how well it works. The same as before, I wrote a short script to iterate the whole validation dataset with our ONNX model:
@@ -316,4 +322,4 @@ This tutorial taught us how to build a handwriting recognition model using Tenso
 
 This tutorial provided a good starting point for building an OCR system using TensorFlow. We covered the basics of collecting and preprocessing the Dataset, defining the model architecture, and training and evaluating the model. To improve the performance of our model, we could try fine-tuning the hyperparameters, using a different dataset or augmenting the data, testing a different model architecture, or incorporating additional features. We can continue to build and improve our handwriting recognition model with these techniques.
 
-The trained model can be downloaded from [this link](https://drive.google.com/drive/folders/1S8EdVUETKfagTdIa1MmJ9GJPIkoaGg3h?usp=sharing).
+The trained model can be downloaded from [this link](https://drive.google.com/drive/folders/1sehMZh37m-XwllkPi4WK2EqlAzGbte7o?usp=sharing).
