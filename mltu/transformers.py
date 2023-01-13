@@ -15,8 +15,11 @@ class Transformer:
         raise NotImplementedError
 
 class ExpandDims(Transformer):
+    def __init__(self, axis: int=-1):
+        self.axis = axis
+
     def __call__(self, data: np.ndarray, label: np.ndarray):
-        return np.expand_dims(data, -1), label
+        return np.expand_dims(data, self.axis), label
 
 class ImageResizer(Transformer):
     """Resize image to (width, height)
@@ -92,7 +95,7 @@ class LabelIndexer(Transformer):
         self.vocab = vocab
 
     def __call__(self, data: np.ndarray, label: np.ndarray):
-        return data, np.array([self.vocab.index(l) for l in label])
+        return data, np.array([self.vocab.index(l) for l in label if l in self.vocab])
 
 class LabelPadding(Transformer):
     """Pad label to max_word_length
@@ -111,6 +114,24 @@ class LabelPadding(Transformer):
 
     def __call__(self, data: np.ndarray, label: np.ndarray):
         return data, np.pad(label, (0, self.max_word_length - len(label)), 'constant', constant_values=self.padding_value)
+
+class SpectrogramPadding(Transformer):
+    """Pad spectrogram to max_spectrogram_length
+    
+    Attributes:
+        max_spectrogram_length (int): Maximum length of spectrogram
+        padding_value (int): Value to pad
+    """
+    def __init__(
+        self, 
+        max_spectrogram_length: int, 
+        padding_value: int
+        ) -> None:
+        self.max_spectrogram_length = max_spectrogram_length
+        self.padding_value = padding_value
+
+    def __call__(self, spectogram: np.ndarray, label: np.ndarray):
+        return np.pad(spectogram, ((0, 0), (0, self.max_spectrogram_length - spectogram.shape[1])), 'constant', constant_values=self.padding_value), label
 
 class ImageShowCV2(Transformer):
     """Show image for visual inspection

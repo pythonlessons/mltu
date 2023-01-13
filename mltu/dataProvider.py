@@ -38,6 +38,7 @@ class DataProvider(tf.keras.utils.Sequence):
         augmentors: typing.List[Augmentor] = None,
         transformers: typing.List[Transformer] = None,
         skip_validation: bool = False,
+        store_in_memory: bool = False,
         limit: int = None,
         ) -> None:
         super().__init__()
@@ -198,6 +199,7 @@ class DataProvider(tf.keras.utils.Sequence):
         # First read and preprocess the batch data
         batch_data, batch_annotations = [], []
         for index, (data, annotation) in enumerate(dataset_batch):
+
             for preprocessor in self._data_preprocessors:
                 data, annotation = preprocessor(data, annotation)
             
