@@ -130,8 +130,10 @@ class SpectrogramPadding(Transformer):
         self.max_spectrogram_length = max_spectrogram_length
         self.padding_value = padding_value
 
-    def __call__(self, spectogram: np.ndarray, label: np.ndarray):
-        return np.pad(spectogram, ((0, 0), (0, self.max_spectrogram_length - spectogram.shape[1])), 'constant', constant_values=self.padding_value), label
+    def __call__(self, spectrogram: np.ndarray, label: np.ndarray):
+        padded_spectrogram = np.pad(spectrogram, ((self.max_spectrogram_length - spectrogram.shape[0], 0),(0,0)), mode='constant', constant_values=self.padding_value)
+
+        return padded_spectrogram, label
 
 class ImageShowCV2(Transformer):
     """Show image for visual inspection

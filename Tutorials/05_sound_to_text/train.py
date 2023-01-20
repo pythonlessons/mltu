@@ -5,9 +5,8 @@ except: pass
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TensorBoard
 
 from mltu.dataProvider import DataProvider
-from mltu.preprocessors import ImageReader, WavReader
-from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding, ImageShowCV2, SpectrogramPadding, ExpandDims
-from mltu.augmentors import RandomBrightness, RandomRotate, RandomErodeDilate, RandomSharpen
+from mltu.preprocessors import WavReader
+from mltu.transformers import LabelIndexer, LabelPadding, SpectrogramPadding
 from mltu.losses import CTCloss
 from mltu.callbacks import Model2onnx, TrainLogger
 from mltu.metrics import CERMetric, WERMetric
@@ -18,6 +17,28 @@ from configs import ModelConfigs
 import stow
 import pandas as pd
 from tqdm import tqdm
+
+import stow
+import tarfile
+from tqdm import tqdm
+from urllib.request import urlopen
+from io import BytesIO
+
+def download_and_unzip(url, extract_to='Datasets', chunk_size=1024*1024):
+    http_response = urlopen(url)
+
+    data = b''
+    iterations = http_response.length // chunk_size + 1
+    for _ in tqdm(range(iterations)):
+        data += http_response.read(chunk_size)
+
+    tarFile = tarfile.open(fileobj=BytesIO(data), mode='r|bz2')
+    tarFile.extractall(path=extract_to)
+    tarFile.close()
+
+dataset_path = stow.join('Datasets', 'LJSpeech-1.1')
+if not stow.exists(dataset_path):
+    download_and_unzip('https://data.keithito.com/data/speech/LJSpeech-1.1.tar.bz2', extract_to='Datasets')
 
 dataset_path = "Datasets/LJSpeech-1.1"
 metadata_path = dataset_path + "/metadata.csv"
@@ -30,29 +51,30 @@ metadata_df = metadata_df[["file_name", "normalized_transcription"]]
 
 # structure the dataset where each row is a list of [wav_file_path, sound transcription]
 dataset = [[f"Datasets/LJSpeech-1.1/wavs/{file}.wav", label] for file, label in metadata_df.values.tolist()]
-dataset = dataset[:50]
 
 # Create a ModelConfigs object to store model configurations
 configs = ModelConfigs()
 
 max_text_length, max_spectrogram_length = 0, 0
 for file_path, label in tqdm(dataset):
-    spectrogram = WavReader.get_spectrogram(file_path, sample_rate=configs.sample_rate, frame_length=configs.frame_length, frame_step=configs.frame_step)
+    spectrogram = WavReader.get_spectrogram(file_path, frame_length=configs.frame_length, frame_step=configs.frame_step, fft_length=configs.fft_length)
     valid_label = [c for c in label if c in configs.vocab]
     max_text_length = max(max_text_length, len(valid_label))
-    max_spectrogram_length = max(max_spectrogram_length, spectrogram.shape[1])
+    max_spectrogram_length = max(max_spectrogram_length, spectrogram.shape[0])
+    configs.input_shape = (max_spectrogram_length, spectrogram.shape[1])
 
 configs.max_spectrogram_length = max_spectrogram_length
 configs.max_text_length = max_text_length
 configs.save()
-
 
 # Create a data provider for the dataset
 data_provider = DataProvider(
     dataset=dataset,
     skip_validation=True,
     batch_size=configs.batch_size,
-    data_preprocessors=[WavReader()],
+    data_preprocessors=[
+        WavReader(frame_length=configs.frame_length, frame_step=configs.frame_step, fft_length=configs.fft_length),
+        ],
     transformers=[
         SpectrogramPadding(max_spectrogram_length=configs.max_spectrogram_length, padding_value=0),
         LabelIndexer(configs.vocab),
@@ -63,17 +85,12 @@ data_provider = DataProvider(
 # Split the dataset into training and validation sets
 train_data_provider, val_data_provider = data_provider.split(split = 0.9)
 
-# for batch in train_data_provider:
-#     pass
-
 # Creating TensorFlow model architecture
 model = train_model(
-    input_dim = (1025, configs.max_spectrogram_length),
+    input_dim = configs.input_shape,
     output_dim = len(configs.vocab),
+    dropout=0.5
 )
-
-# from mltu.model_utils import CustomModel
-# model = CustomModel(model.inputs, model.outputs)
 
 # Compile the model and print summary
 model.compile(
@@ -87,13 +104,8 @@ model.compile(
 )
 model.summary(line_length=110)
 
-# model.Metrics = [
-#     CERMetric(vocabulary=configs.vocab),
-#     WERMetric(vocabulary=configs.vocab)
-# ]
-
 # Define callbacks
-earlystopper = EarlyStopping(monitor='val_CER', patience=20, verbose=1, mode='min')
+earlystopper = EarlyStopping(monitor='val_CER', patience=30, verbose=1, mode='min')
 checkpoint = ModelCheckpoint(f"{configs.model_path}/model.h5", monitor='val_CER', verbose=1, save_best_only=True, mode='min')
 trainLogger = TrainLogger(configs.model_path)
 tb_callback = TensorBoard(f'{configs.model_path}/logs', update_freq=1)
@@ -109,6 +121,9 @@ model.fit(
     workers=configs.train_workers
 )
 
+# Save training and validation datasets as csv files
+train_data_provider.to_csv(stow.join(configs.model_path, 'train.csv'))
+val_data_provider.to_csv(stow.join(configs.model_path, 'val.csv'))
 
 # https://learn.microsoft.com/en-us/training/modules/intro-audio-classification-tensorflow/3-visualizations-transforms
 # https://www.tensorflow.org/tutorials/audio/simple_audio
