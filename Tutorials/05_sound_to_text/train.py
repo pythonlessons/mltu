@@ -58,7 +58,7 @@ configs = ModelConfigs()
 max_text_length, max_spectrogram_length = 0, 0
 for file_path, label in tqdm(dataset):
     spectrogram = WavReader.get_spectrogram(file_path, frame_length=configs.frame_length, frame_step=configs.frame_step, fft_length=configs.fft_length)
-    valid_label = [c for c in label if c in configs.vocab]
+    valid_label = [c for c in label.lower() if c in configs.vocab]
     max_text_length = max(max_text_length, len(valid_label))
     max_spectrogram_length = max(max_spectrogram_length, spectrogram.shape[0])
     configs.input_shape = [max_spectrogram_length, spectrogram.shape[1]]

@@ -40,8 +40,8 @@ class OnnxInferenceModel:
         self.input_name = self.model._inputs_meta[0].name
         self.output_name = self.model._outputs_meta[0].name
 
-    def predict(self, image: np.ndarray):
+    def predict(self, data: np.ndarray):
         raise NotImplementedError
 
-    def __call__(self, image: np.ndarray):
-        return self.predict(image)
+    def __call__(self, data: np.ndarray):
+        return self.predict(data)

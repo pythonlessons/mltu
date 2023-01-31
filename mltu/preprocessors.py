@@ -1,8 +1,11 @@
 import cv2
 import typing
 import librosa
+import librosa.display
 import numpy as np
-import tensorflow as tf
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.interactive(False)
 
 class ImageReader:
     """Read image with cv2 from path and return image and label"""
@@ -63,6 +66,54 @@ class WavReader:
         spectrogram = (spectrogram - np.mean(spectrogram)) / (np.std(spectrogram) + 1e-10)
 
         return spectrogram
+
+    @staticmethod
+    def plot_raw_audio(wav_path: str, title:str = None, sr: int = 16000) -> None:
+        """Plot the raw audio of a WAV file
+
+        Args:
+            wav_path (str): Path to the WAV file.
+            sr (int, optional): Sample rate of the WAV file. Defaults to 16000.
+        """
+        # Load the wav file and store the audio data in the variable 'audio' and the sample rate in 'orig_sr'
+        audio, orig_sr = librosa.load(wav_path, sr=sr)
+
+        duration = len(audio) / orig_sr
+
+        time = np.linspace(0, duration, num=len(audio))
+
+        plt.figure(figsize=(15, 5))
+        plt.plot(time, audio)
+        plt.title(title) if title else plt.title('Audio Plot')
+        plt.ylabel('signal wave')
+        plt.xlabel('time (s)')
+        plt.tight_layout()
+        plt.show()
+
+    @staticmethod
+    def plot_spectrogram(spectrogram: np.ndarray, title:str = "", transpose: bool = True, invert: bool = True) -> None:
+        """Plot the spectrogram of a WAV file
+
+        Args:
+            spectrogram (np.ndarray): Spectrogram of the WAV file.
+            title (str, optional): Title of the plot. Defaults to None.
+            transpose (bool, optional): Transpose the spectrogram. Defaults to True.
+            invert (bool, optional): Invert the spectrogram. Defaults to True.
+        """
+        if transpose:
+            spectrogram = spectrogram.T
+        
+        if invert:
+            spectrogram = spectrogram[::-1]
+
+        plt.figure(figsize=(15, 5))
+        plt.imshow(spectrogram, aspect='auto', origin='lower')
+        plt.title(f'Spectrogram: {title}')
+        plt.xlabel('Time')
+        plt.ylabel('Frequency')
+        plt.colorbar()
+        plt.tight_layout()
+        plt.show()
 
     def __call__(self, audio_path: str, label: typing.Any):
         """
