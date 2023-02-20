@@ -23,30 +23,29 @@ if __name__ == "__main__":
     import pandas as pd
     from tqdm import tqdm
     from mltu.configs import BaseModelConfigs
-    import matplotlib.pyplot as plt
-    import matplotlib
-    matplotlib.interactive(False)
 
-    configs = BaseModelConfigs.load("Models/05_sound_to_text/202301221900/configs.yaml")
+    configs = BaseModelConfigs.load("Models/05_sound_to_text/202302051936/configs.yaml")
 
-    model = WavToTextModel(model_path=configs.model_path, char_list=configs.vocab, force_cpu=True)
+    model = WavToTextModel(model_path=configs.model_path, char_list=configs.vocab, force_cpu=False)
 
-    df = pd.read_csv("Models/05_sound_to_text/202301221900/val.csv").values.tolist()
+    df = pd.read_csv("Models/05_sound_to_text/202302051936/val.csv").values.tolist()
 
     accum_cer, accum_wer = [], []
     for wav_path, label in tqdm(df):
         
         spectrogram = WavReader.get_spectrogram(wav_path, frame_length=configs.frame_length, frame_step=configs.frame_step, fft_length=configs.fft_length)
-        WavReader.plot_raw_audio(wav_path, label)
+        # WavReader.plot_raw_audio(wav_path, label)
 
         padded_spectrogram = np.pad(spectrogram, ((configs.max_spectrogram_length - spectrogram.shape[0], 0),(0,0)), mode='constant', constant_values=0)
 
-        WavReader.plot_spectrogram(spectrogram, label)
+        # WavReader.plot_spectrogram(spectrogram, label)
 
         text = model.predict(padded_spectrogram)
 
-        cer = get_cer(text, label.lower())
-        wer = get_wer(text, label.lower())
+        true_label = "".join([l for l in label.lower() if l in configs.vocab])
+
+        cer = get_cer(text, true_label)
+        wer = get_wer(text, true_label)
 
         accum_cer.append(cer)
         accum_wer.append(wer)

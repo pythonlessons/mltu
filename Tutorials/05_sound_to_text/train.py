@@ -2,8 +2,14 @@ import tensorflow as tf
 try: [tf.config.experimental.set_memory_growth(gpu, True) for gpu in tf.config.experimental.list_physical_devices('GPU')]
 except: pass
 
-from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TensorBoard
+import stow
+import tarfile
+import pandas as pd
+from tqdm import tqdm
+from urllib.request import urlopen
+from io import BytesIO
 
+from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TensorBoard
 from mltu.dataProvider import DataProvider
 from mltu.preprocessors import WavReader
 from mltu.transformers import LabelIndexer, LabelPadding, SpectrogramPadding
@@ -13,16 +19,6 @@ from mltu.metrics import CERMetric, WERMetric
 
 from model import train_model
 from configs import ModelConfigs
-
-import stow
-import pandas as pd
-from tqdm import tqdm
-
-import stow
-import tarfile
-from tqdm import tqdm
-from urllib.request import urlopen
-from io import BytesIO
 
 def download_and_unzip(url, extract_to='Datasets', chunk_size=1024*1024):
     http_response = urlopen(url)
