@@ -108,6 +108,7 @@ class CERMetric(tf.keras.metrics.Metric):
         valid_pred = tf.where(valid_pred_indices, pred_decoded, padding)
 
         # Keep only valid indices in the true labels tensor, replacing invalid indices with padding token
+        y_true = tf.cast(y_true, tf.int64)
         valid_true_indices = tf.less(y_true, vocab_length)
         valid_true = tf.where(valid_true_indices, y_true, padding)
 
@@ -188,6 +189,7 @@ class WERMetric(tf.keras.metrics.Metric):
         """
         # Keep only the valid indices of the dense input tensor
         vocab_length = tf.cast(tf.shape(vocab)[0], tf.int64)
+        dense_input = tf.cast(dense_input, tf.int64)
         valid_indices = tf.less(dense_input, vocab_length)
         valid_input = tf.where(valid_indices, dense_input, padding)
 
