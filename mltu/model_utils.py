@@ -22,6 +22,9 @@ class CustomModel(Model):
         # Metrics are configured in `compile()`.
         self.compiled_metrics.update_state(targets, results)
 
+        # for metric in self.Metrics:
+        #     metric.update_state(targets, results)
+
         return {m.name: m.result() for m in self.metrics}
 
     def test_step(self, test_data):

@@ -26,11 +26,11 @@ if __name__ == "__main__":
     from tqdm import tqdm
     from mltu.configs import BaseModelConfigs
 
-    configs = BaseModelConfigs.load("Models/03_handwriting_recognition/202212290905/configs.yaml")
+    configs = BaseModelConfigs.load("Models/03_handwriting_recognition/202301111911/configs.yaml")
 
     model = ImageToWordModel(model_path=configs.model_path, char_list=configs.vocab)
 
-    df = pd.read_csv("Models/03_handwriting_recognition/202212290905/val.csv").values.tolist()
+    df = pd.read_csv("Models/03_handwriting_recognition/202301111911/val.csv").values.tolist()
 
     accum_cer = []
     for image_path, label in tqdm(df):
@@ -42,5 +42,11 @@ if __name__ == "__main__":
         print(f"Image: {image_path}, Label: {label}, Prediction: {prediction_text}, CER: {cer}")
 
         accum_cer.append(cer)
+
+        # resize by 4x
+        image = cv2.resize(image, (image.shape[1] * 4, image.shape[0] * 4))
+        cv2.imshow("Image", image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     print(f"Average CER: {np.average(accum_cer)}")
