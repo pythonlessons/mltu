@@ -4,7 +4,6 @@ import typing
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-import tensorflow as tf
 
 from .augmentors import Augmentor
 from .transformers import Transformer
@@ -14,7 +13,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class DataProvider(tf.keras.utils.Sequence):
+class DataProvider:
     """ Standardised object for providing data to a TensorFlow model while training.
 
     Args:
@@ -38,7 +37,6 @@ class DataProvider(tf.keras.utils.Sequence):
         augmentors: typing.List[Augmentor] = None,
         transformers: typing.List[Transformer] = None,
         skip_validation: bool = False,
-        store_in_memory: bool = False,
         limit: int = None,
         ) -> None:
         super().__init__()
@@ -142,7 +140,7 @@ class DataProvider(tf.keras.utils.Sequence):
         else:
             raise TypeError("Dataset must be a path, list or pandas dataframe.")
 
-    def split(self, split: float = 0.9, shuffle: bool = True) -> typing.Tuple[tf.keras.utils.Sequence, tf.keras.utils.Sequence]:
+    def split(self, split: float = 0.9, shuffle: bool = True) -> typing.Tuple[typing.Any, typing.Any]:
         """ Split current data provider into training and validation data providers. 
         
         Args:

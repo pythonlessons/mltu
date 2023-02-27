@@ -4,13 +4,14 @@ except: pass
 
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TensorBoard
 
-from mltu.dataProvider import DataProvider
+from mltu.tensorflow.dataProvider import DataProvider
+from mltu.tensorflow.losses import CTCloss
+from mltu.tensorflow.callbacks import Model2onnx, TrainLogger
+from mltu.tensorflow.metrics import CWERMetric
+
 from mltu.preprocessors import ImageReader
 from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding
 from mltu.augmentors import RandomBrightness, RandomRotate, RandomErodeDilate
-from mltu.losses import CTCloss
-from mltu.callbacks import Model2onnx, TrainLogger
-from mltu.metrics import CWERMetric
 
 from model import train_model
 from configs import ModelConfigs
@@ -70,7 +71,7 @@ model = train_model(
 model.compile(
     optimizer=tf.keras.optimizers.Adam(learning_rate=configs.learning_rate), 
     loss=CTCloss(), 
-    metrics=[CWERMetric()],
+    metrics=[CWERMetric(padding_token=len(configs.vocab))],
     run_eagerly=False
 )
 model.summary(line_length=110)
@@ -78,7 +79,7 @@ model.summary(line_length=110)
 stow.mkdir(configs.model_path)
 
 # Define callbacks
-earlystopper = EarlyStopping(monitor='val_CER', patience=40, verbose=1)
+earlystopper = EarlyStopping(monitor='val_CER', patience=50, verbose=1)
 checkpoint = ModelCheckpoint(f"{configs.model_path}/model.h5", monitor='val_CER', verbose=1, save_best_only=True, mode='min')
 trainLogger = TrainLogger(configs.model_path)
 tb_callback = TensorBoard(f'{configs.model_path}/logs', update_freq=1)

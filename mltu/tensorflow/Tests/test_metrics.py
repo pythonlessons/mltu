@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from mltu.metrics import CERMetric, WERMetric
+from mltu.tensorflow.metrics import CERMetric, WERMetric
 
 import numpy as np
 import tensorflow as tf

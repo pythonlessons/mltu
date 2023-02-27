@@ -10,12 +10,13 @@ from urllib.request import urlopen
 from io import BytesIO
 
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TensorBoard
-from mltu.dataProvider import DataProvider
 from mltu.preprocessors import WavReader
+
+from mltu.tensorflow.dataProvider import DataProvider
 from mltu.transformers import LabelIndexer, LabelPadding, SpectrogramPadding
-from mltu.losses import CTCloss
-from mltu.callbacks import Model2onnx, TrainLogger
-from mltu.metrics import CERMetric, WERMetric
+from mltu.tensorflow.losses import CTCloss
+from mltu.tensorflow.callbacks import Model2onnx, TrainLogger
+from mltu.tensorflow.metrics import CERMetric, WERMetric
 
 from model import train_model
 from configs import ModelConfigs

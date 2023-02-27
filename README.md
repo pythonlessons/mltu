@@ -1,5 +1,5 @@
-# MLTU - Machine Learning Training Utilities (TensorFlow)
-Machine Learning Training Utilities with TensorFlow 2.* and Python 3
+# MLTU - Machine Learning Training Utilities
+Machine Learning Training Utilities for TensorFlow 2.* and PyTorch with Python 3
 
 # Installation:
 To use MLTU in your own project, you can install it from PyPI:

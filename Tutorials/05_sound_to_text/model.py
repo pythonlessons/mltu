@@ -2,7 +2,7 @@ import tensorflow as tf
 from keras import layers
 from keras.models import Model
 
-from mltu.model_utils import residual_block, activation_layer
+from mltu.tensorflow.model_utils import residual_block, activation_layer
 
 def train_model(input_dim, output_dim, activation='leaky_relu', dropout=0.2):
     
