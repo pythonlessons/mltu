@@ -1,7 +1,8 @@
 import typing
 import tensorflow as tf
-from tensorflow.keras import layers
-from tensorflow.keras.models import Model
+from tensorflow import keras
+from keras import layers
+from keras.models import Model
 
 class CustomModel(Model):
     """ Custom TensorFlow model for debugging training process purposes
@@ -21,9 +22,6 @@ class CustomModel(Model):
         # Update the metrics.
         # Metrics are configured in `compile()`.
         self.compiled_metrics.update_state(targets, results)
-
-        # for metric in self.Metrics:
-        #     metric.update_state(targets, results)
 
         return {m.name: m.result() for m in self.metrics}
 

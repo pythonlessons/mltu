@@ -30,13 +30,13 @@ class DataProvider:
     def __init__(
         self, 
         dataset: typing.Union[str, list, pd.DataFrame],
-        data_preprocessors: typing.List[typing.Callable],
+        data_preprocessors: typing.List[typing.Callable] = None,
         batch_size: int = 4,
         shuffle: bool = True,
         initial_epoch: int = 1,
         augmentors: typing.List[Augmentor] = None,
         transformers: typing.List[Transformer] = None,
-        skip_validation: bool = False,
+        skip_validation: bool = True,
         limit: int = None,
         ) -> None:
         super().__init__()
@@ -189,6 +189,11 @@ class DataProvider:
         batch_annotations = [self._dataset[index] for index in batch_indexes]
 
         return batch_annotations
+    
+    def __iter__(self):
+        """ Create a generator that iterate over the Sequence."""
+        for item in (self[i] for i in range(len(self))):
+            yield item
 
     def __getitem__(self, index: int):
         """ Returns a batch of data by batch index"""
@@ -198,8 +203,10 @@ class DataProvider:
         batch_data, batch_annotations = [], []
         for index, (data, annotation) in enumerate(dataset_batch):
 
-            for preprocessor in self._data_preprocessors:
-                data, annotation = preprocessor(data, annotation)
+            # Apply data preprocessors to batch
+            if self._data_preprocessors is not None:
+                for preprocessor in self._data_preprocessors:
+                    data, annotation = preprocessor(data, annotation)
             
             # If data is None, remove it from the dataset
             if data is None:

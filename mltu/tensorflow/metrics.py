@@ -1,4 +1,5 @@
 import tensorflow as tf
+from keras.metrics import Metric
 
 class CWERMetric(tf.keras.metrics.Metric):
     """A custom TensorFlow metric to compute the Character Error Rate (CER).

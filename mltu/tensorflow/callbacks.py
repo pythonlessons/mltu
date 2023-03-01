@@ -1,5 +1,5 @@
 import os
-from tensorflow.keras.callbacks import Callback
+from keras.callbacks import Callback
 
 import logging
 
