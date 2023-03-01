@@ -13,6 +13,7 @@ from model import Net
 from mltu.torch.dataProvider import DataProvider
 from mltu.torch.model import Model
 from mltu.torch.metrics import Accuracy
+from mltu.torch.callbacks import EarlyStopping
 
 path='Datasets/data'
 def fetch(url):
@@ -46,13 +47,21 @@ def preprocessor(data, target):
 train_dataProvider = DataProvider(
     train_dataset, 
     data_preprocessors=[preprocessor],
-    batch_size=64
+    batch_size=64,
+    workers = 12,
+    use_multiprocessing=False
     )
+
+# for r in range(5):
+#     for _ in tqdm(train_dataProvider):
+#         continue
+# exit()
 
 test_dataProvider = DataProvider(
     test_dataset,
     data_preprocessors=[preprocessor],
     batch_size=64
+    # workers = 1,
     )
 
 # create network, optimizer and define loss function
@@ -60,9 +69,11 @@ network = Net()
 optimizer = optim.Adam(network.parameters(), lr=0.001)
 loss = F.nll_loss
 
+earlyStopping = EarlyStopping(monitor='val_loss', patience=3, mode="min_equal", verbose=1)
+
 # create model object that will handle training and testing of the network
 model = Model(network, optimizer, loss, metrics=[Accuracy()])
-model.fit(train_dataProvider, test_dataProvider, epochs=5)
+model.fit(train_dataProvider, test_dataProvider, epochs=5, callbacks=[earlyStopping])
 
 # define output path and create folder if not exists
 output_path = 'Models/06_pytorch_introduction'

@@ -35,47 +35,6 @@ def check_data_device(func):
     return wrapper
 
 
-class MetricsHandler:
-    def __init__(self, metrics: typing.List[Metric]):
-        self.metrics = metrics
-
-        # Validate metrics
-        if not all(isinstance(m, Metric) for m in self.metrics):
-            raise TypeError("all items in the metrics argument must be of type Metric (Check mltu.metrics.metrics.py for more information)")
-        
-        self.train_results_dict = {'loss': None}
-        self.train_results_dict.update({metric.name: None for metric in self.metrics})
-        
-        self.val_results_dict = {'val_loss': None}
-        self.val_results_dict.update({"val_" + metric.name: None for metric in self.metrics})
-
-    def update(self, target, output):
-        for metric in self.metrics:
-            metric.update(output, target)
-
-    def reset(self):
-        for metric in self.metrics:
-            metric.reset()
-
-    def results(self, loss, train: bool=True):
-        if train:
-            self.train_results_dict['loss'] = loss
-            for metric in self.metrics:
-                self.train_results_dict[metric.name] = metric.result()
-            return self.train_results_dict
-        
-        self.val_results_dict['val_loss'] = loss
-        for metric in self.metrics:
-            self.val_results_dict["val_" + metric.name] = metric.result()  
-        return self.val_results_dict
-    
-    def description(self, epoch: int=None, train: bool=True):
-        epoch_desc = f"Epoch {epoch} - " if epoch is not None else "          "
-        dict = self.train_results_dict if train else self.val_results_dict
-        
-        return epoch_desc + " - ".join([f"{k}: {v:.4f}" for k, v in dict.items()])
-    
-
 class Model:
     def __init__(
             self, 
@@ -83,15 +42,14 @@ class Model:
             optimizer: torch.optim.Optimizer, 
             loss: typing.Callable,
             metrics: typing.List[Metric] = [],
-            callbacks: typing.List[Callback] = []
         ):
         self.model = model
         self.optimizer = optimizer
         self.loss = loss
 
         self.metrics = MetricsHandler(metrics)
-        self.callbacks = callbacks
 
+        self.stop_training = False
         # get device on which model is running
         self._device = next(self.model.parameters()).device
 
@@ -104,13 +62,6 @@ class Model:
         
         if not isinstance(self.optimizer, torch.optim.Optimizer):
             raise TypeError("optimizer argument must be a torch.optim.Optimizer")
-            
-        if not isinstance(self.callbacks, list):
-            raise TypeError("callbacks argument must be a list")
-
-        # Validate callbacks
-        if not all(isinstance(c, Callback) for c in self.callbacks):
-            raise TypeError("all items in the callbacks argument must be of type Callback (Check mltu.callbacks.callbacks.py for more information)")
 
     @check_data_type
     @check_data_device
@@ -179,9 +130,64 @@ class Model:
 
         return results_dict
     
-    def fit(self, train_dataProvider: DataProvider, test_dataProvider: DataProvider, epochs: int, initial_epoch:int = 1):
+    def fit(self, train_dataProvider: DataProvider, test_dataProvider: DataProvider, epochs: int, initial_epoch:int = 1, callbacks: typing.List[Callback] = []):
         self._epoch = initial_epoch
+        self.callbacks = CallbacksHandler(self, callbacks)
         for epoch in range(initial_epoch, initial_epoch + epochs):
             train_logs = self.train(train_dataProvider)
             val_logs = self.test(test_dataProvider)
             self._epoch += 1
+
+            if self.stop_training:
+                break
+
+
+class MetricsHandler:
+    def __init__(self, metrics: typing.List[Metric]):
+        self.metrics = metrics
+
+        # Validate metrics
+        if not all(isinstance(m, Metric) for m in self.metrics):
+            raise TypeError("all items in the metrics argument must be of type Metric (Check mltu.metrics.metrics.py for more information)")
+        
+        self.train_results_dict = {'loss': None}
+        self.train_results_dict.update({metric.name: None for metric in self.metrics})
+        
+        self.val_results_dict = {'val_loss': None}
+        self.val_results_dict.update({"val_" + metric.name: None for metric in self.metrics})
+
+    def update(self, target, output):
+        for metric in self.metrics:
+            metric.update(output, target)
+
+    def reset(self):
+        for metric in self.metrics:
+            metric.reset()
+
+    def results(self, loss, train: bool=True):
+        if train:
+            self.train_results_dict['loss'] = loss
+            for metric in self.metrics:
+                self.train_results_dict[metric.name] = metric.result()
+            return self.train_results_dict
+        
+        self.val_results_dict['val_loss'] = loss
+        for metric in self.metrics:
+            self.val_results_dict["val_" + metric.name] = metric.result()  
+        return self.val_results_dict
+    
+    def description(self, epoch: int=None, train: bool=True):
+        epoch_desc = f"Epoch {epoch} - " if epoch is not None else "          "
+        dict = self.train_results_dict if train else self.val_results_dict
+        
+        return epoch_desc + " - ".join([f"{k}: {v:.4f}" for k, v in dict.items()])
+    
+
+class CallbacksHandler:
+    def __init__(self, model: Model, callbacks: typing.List[Callback]):
+        self.callbacks = callbacks
+        self.model = model
+
+        # Validate callbacks
+        if not all(isinstance(c, Callback) for c in self.callbacks):
+            raise TypeError("all items in the callbacks argument must be of type Callback (Check mltu.torch.callbacks.py for more information)")

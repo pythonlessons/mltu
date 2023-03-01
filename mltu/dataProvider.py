@@ -45,8 +45,8 @@ class DataProvider:
         self._batch_size = batch_size
         self._shuffle = shuffle
         self._epoch = initial_epoch
-        self._augmentors = augmentors
-        self._transformers = transformers
+        self._augmentors = [] if augmentors is None else augmentors
+        self._transformers = [] if transformers is None else transformers
         self._skip_validation = skip_validation
         self._limit = limit
         self._step = 0
@@ -195,35 +195,33 @@ class DataProvider:
         for item in (self[i] for i in range(len(self))):
             yield item
 
+    def process_data(self, batch_data):
+        """ Process data batch of data """
+        data, annotation = batch_data
+        for preprocessor in self._data_preprocessors:
+            data, annotation = preprocessor(data, annotation)
+        
+        if data is None or annotation is None:
+            raise ValueError("Data or annotation is None.")
+
+        # Then augment, transform and postprocess the batch data
+        for objects in [self._augmentors, self._transformers]:
+            for object in objects:
+                data, annotation = object(data, annotation)
+
+        return data, annotation
+
     def __getitem__(self, index: int):
         """ Returns a batch of data by batch index"""
         dataset_batch = self.get_batch_annotations(index)
         
         # First read and preprocess the batch data
         batch_data, batch_annotations = [], []
-        for index, (data, annotation) in enumerate(dataset_batch):
+        for index, batch in enumerate(dataset_batch):
 
-            # Apply data preprocessors to batch
-            if self._data_preprocessors is not None:
-                for preprocessor in self._data_preprocessors:
-                    data, annotation = preprocessor(data, annotation)
-            
-            # If data is None, remove it from the dataset
-            if data is None:
-                self._dataset.remove(dataset_batch[index])
-                continue
+            data, annotation = self.process_data(batch)
 
             batch_data.append(data)
             batch_annotations.append(annotation)
-
-        # Apply augmentors to batch
-        if self._augmentors is not None:
-            for augmentor in self._augmentors:
-                batch_data, batch_annotations = zip(*[augmentor(data, annotation) for data, annotation in zip(batch_data, batch_annotations)])
-
-        # Apply transformers to batch
-        if self._transformers is not None:
-            for transformer in self._transformers:
-                batch_data, batch_annotations = zip(*[transformer(data, annotation) for data, annotation in zip(batch_data, batch_annotations)])
 
         return np.array(batch_data), np.array(batch_annotations)
