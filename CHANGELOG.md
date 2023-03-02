@@ -1,3 +1,13 @@
+## [0.1.7] - 2022-02-03
+
+### Changed
+- added `mltu.utils` into built package
+
+## [0.1.6] - 
+
+### Changed
+- forgot to update changes...
+
 ## [0.1.5] - 2022-01-10
 
 ### Changed

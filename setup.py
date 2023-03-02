@@ -41,7 +41,7 @@ setup(
         'gpu': ['onnxruntime-gpu'],
     },
     python_requires='>=3',
-    packages = ['mltu'],
+    packages = ['mltu', 'mltu.utils'],
     include_package_data=True,
     project_urls={
         'Source': 'https://github.com/pythonlessons/mltu/',
