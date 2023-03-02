@@ -6,6 +6,7 @@ from tqdm import tqdm
 from .metrics import Metric
 from .callbacks import Callback
 from .dataProvider import DataProvider
+from .handlers import MetricsHandler, CallbacksHandler
 
 def check_data_type(func):
     """ Check if data is of type torch.Tensor, if not convert it to torch.Tensor"""
@@ -66,128 +67,97 @@ class Model:
     @check_data_type
     @check_data_device
     def train_step(self, data, target):
-        # TODO before training step, call callbacks
         self.optimizer.zero_grad()
         output = self.model(data)
-        # TODO after training step, call callbacks
         loss = self.loss(output, target)
         loss.backward()
         self.optimizer.step()
 
         self.metrics.update(target, output)
 
-        return loss.item()
+        return loss
     
     @check_data_type
     @check_data_device
     def test_step(self, data, target):
-        # TODO before testing step, call callbacks
         output = self.model(data)
-        # TODO after testing step, call callbacks
         loss = self.loss(output, target)
 
         self.metrics.update(target, output)
 
-        return loss.item()
+        return loss
     
     def train(self, dataProvider: DataProvider):
         self.model.train()
         losses = []
         pbar = tqdm(dataProvider, total=len(dataProvider))
         for step, (data, target) in enumerate(pbar):
+            self.callbacks.on_batch_begin(step)
+            self.callbacks.on_train_batch_begin(step)
+
             loss = self.train_step(data, target)
-            losses.append(loss)
+            losses.append(loss.item())
 
             # get training results of one step
-            results_dict = self.metrics.results(np.mean(losses), train=True)
+            logs = self.metrics.results(np.mean(losses), train=True)
             description = self.metrics.description(epoch=self._epoch, train=True)
 
             # update progress bar description
             pbar.set_description(description)
 
+            self.callbacks.on_train_batch_end(step, logs=logs)
+            self.callbacks.on_batch_end(step, logs=logs)
+
         # reset metrics after each training epoch
         self.metrics.reset()
 
-        return results_dict
+        return logs
 
     def test(self, dataProvider: DataProvider):
         self.model.eval()
         losses = []
         pbar = tqdm(dataProvider, total=len(dataProvider))
         for step, (data, target) in enumerate(pbar):
+            self.callbacks.on_batch_begin(step)
+            self.callbacks.on_test_batch_begin(step)
+
             loss = self.test_step(data, target)
-            losses.append(loss)
+            losses.append(loss.item())
 
             # get testing results of one step
-            results_dict = self.metrics.results(np.mean(losses), train=False)
+            logs = self.metrics.results(np.mean(losses), train=False)
             description = self.metrics.description(train=False)
 
             # update progress bar description
             pbar.set_description(description)
 
+            self.callbacks.on_train_batch_end(step, logs=logs)
+            self.callbacks.on_batch_end(step, logs=logs)
+
         # reset metrics after each test epoch
         self.metrics.reset()
 
-        return results_dict
+        return logs
+    
+    def save(self, path: str):
+        torch.save(self.model.state_dict(), path)
     
     def fit(self, train_dataProvider: DataProvider, test_dataProvider: DataProvider, epochs: int, initial_epoch:int = 1, callbacks: typing.List[Callback] = []):
         self._epoch = initial_epoch
         self.callbacks = CallbacksHandler(self, callbacks)
+        self.callbacks.on_train_begin()
         for epoch in range(initial_epoch, initial_epoch + epochs):
+            self.callbacks.on_epoch_begin(epoch)
+
             train_logs = self.train(train_dataProvider)
             val_logs = self.test(test_dataProvider)
-            self._epoch += 1
+
+            logs = {**train_logs, **val_logs}
+            self.callbacks.on_epoch_end(epoch, logs=logs)
 
             if self.stop_training:
                 break
 
+            self._epoch += 1
 
-class MetricsHandler:
-    def __init__(self, metrics: typing.List[Metric]):
-        self.metrics = metrics
-
-        # Validate metrics
-        if not all(isinstance(m, Metric) for m in self.metrics):
-            raise TypeError("all items in the metrics argument must be of type Metric (Check mltu.metrics.metrics.py for more information)")
-        
-        self.train_results_dict = {'loss': None}
-        self.train_results_dict.update({metric.name: None for metric in self.metrics})
-        
-        self.val_results_dict = {'val_loss': None}
-        self.val_results_dict.update({"val_" + metric.name: None for metric in self.metrics})
-
-    def update(self, target, output):
-        for metric in self.metrics:
-            metric.update(output, target)
-
-    def reset(self):
-        for metric in self.metrics:
-            metric.reset()
-
-    def results(self, loss, train: bool=True):
-        if train:
-            self.train_results_dict['loss'] = loss
-            for metric in self.metrics:
-                self.train_results_dict[metric.name] = metric.result()
-            return self.train_results_dict
-        
-        self.val_results_dict['val_loss'] = loss
-        for metric in self.metrics:
-            self.val_results_dict["val_" + metric.name] = metric.result()  
-        return self.val_results_dict
-    
-    def description(self, epoch: int=None, train: bool=True):
-        epoch_desc = f"Epoch {epoch} - " if epoch is not None else "          "
-        dict = self.train_results_dict if train else self.val_results_dict
-        
-        return epoch_desc + " - ".join([f"{k}: {v:.4f}" for k, v in dict.items()])
-    
-
-class CallbacksHandler:
-    def __init__(self, model: Model, callbacks: typing.List[Callback]):
-        self.callbacks = callbacks
-        self.model = model
-
-        # Validate callbacks
-        if not all(isinstance(c, Callback) for c in self.callbacks):
-            raise TypeError("all items in the callbacks argument must be of type Callback (Check mltu.torch.callbacks.py for more information)")
+        self.callbacks.on_train_end(logs)

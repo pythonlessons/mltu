@@ -1,3 +1,4 @@
+import os
 import logging
 import numpy as np
 
@@ -113,9 +114,67 @@ class EarlyStopping(Callback):
             self.wait += 1
             if self.wait >= self.patience:
                 self.stopped_epoch = epoch
-                # self.model.stop_training = True # TODO to stop training
+                self.model.stop_training = True # TODO to stop training
 
     def on_train_end(self, logs=None):
         if self.stopped_epoch > 0 and self.verbose:
             logger.info(f"Epoch {self.stopped_epoch}: early stopping")
 
+
+class ModelCheckpoint(Callback):
+    def __init__(
+        self, 
+        filepath: str,
+        monitor: str = "val_loss",
+        verbose: bool = False,
+        save_best_only: bool = True,
+        mode: str = "min",
+        ):
+        super(ModelCheckpoint, self).__init__()
+
+        self.filepath = filepath
+        self.monitor = monitor
+        self.verbose = verbose
+        self.mode = mode
+        self.save_best_only = save_best_only
+        self.best = None
+
+        if self.mode not in ["min", "max", "max_equal", "min_equal"]:
+            raise ValueError(
+                "ModelCheckpoint mode %s is unknown, "
+                "please choose one of min, max, max_equal, min_equal" % self.mode
+            )
+        
+    def on_train_begin(self, logs=None):
+        self.best = np.inf if self.mode == "min" or self.mode == "min_equal" else -np.Inf
+
+        # create directory if not exist
+        if not os.path.exists(os.path.dirname(self.filepath)):
+            os.makedirs(os.path.dirname(self.filepath))
+
+    def on_epoch_end(self, epoch: int, logs=None):
+        current = self.get_monitor_value(logs)
+        if current is None:
+            return
+
+        if self.mode == "min" and np.less(current, self.best):
+            self.best = current
+            self.save_model(epoch, current)
+        elif self.mode == "max" and np.greater(current, self.best):
+            self.best = current
+            self.save_model(epoch, current)
+        elif self.mode == "min_equal" and np.less_equal(current, self.best):
+            self.best = current
+            self.save_model(epoch, current)
+        elif self.mode == "max_equal" and np.greater_equal(current, self.best):
+            self.best = current
+            self.save_model(epoch, current)
+        else:
+            if not self.save_best_only:
+                self.save_model(epoch, current)
+
+    def save_model(self, epoch: int, current: float = None):
+        if self.verbose:
+            logger.info(f"Epoch {epoch}: {self.monitor} improved from {self.best:.5f} to {current:.5f}, saving model to {self.filepath}")
+
+        self.model.save(self.filepath)

@@ -1,4 +1,4 @@
-import stow
+import os
 import yaml
 
 class BaseModelConfigs:
@@ -13,8 +13,11 @@ class BaseModelConfigs:
         if self.model_path is None:
             raise Exception("Model path is not specified")
 
-        stow.mkdir(self.model_path)
-        with open(stow.join(self.model_path, name), 'w') as f:
+        # create directory if not exist
+        if not os.path.exists(self.model_path):
+            os.makedirs(self.model_path)
+
+        with open(os.path.join(self.model_path, name), 'w') as f:
             yaml.dump(self.serialize(), f)
 
     @staticmethod
