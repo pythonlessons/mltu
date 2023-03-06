@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
+# Define the model architecture
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -17,4 +18,5 @@ class Net(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
-        return F.log_softmax(x, dim=1)
+        x = F.log_softmax(x, dim=1)
+        return x

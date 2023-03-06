@@ -1,21 +1,26 @@
-## [1.0.0] - 2022-02-27
-
+## [1.0.0] - 2022-03-06
 ### Changed
 - detaching TensorFlow from mltu, now mltu is only a collection of utilities for training machine learning models
 
 ### Added:
--
+- added 06_pytorch_introduction tutorial
+- added `mltu.tensorflow` and `mltu.torch` into built package
+
 
 ## [0.1.6] - 2022-02-26
-
 ### Changed
-
+- 
 ### Added:
 - added 05_sound_to_text tutorial
 - added WavReader to mltu/preprocessors, used to read wav files and convert them to numpy arrays
 
-## [0.1.5] - 2022-01-10
 
+## [0.1.7] - 2022-02-03
+### Changed
+- added `mltu.utils` into built package
+
+
+## [0.1.5] - 2022-01-10
 ### Changed
 - seperated CWERMetric to SER and WER Metrics in mltu.metrics, Character/word rate was calculatted in a wrong way
 - created @setter for augmentors and transformers in DataProvider, to properlly add augmentors and transformers to the pipeline
@@ -29,10 +34,11 @@
 - added better explained documentation
 - created unittests for CER and WER in mltu.utils.text_utils and TensorFlow verion of CER and WER mltu.metrics
 
-## [0.1.4] - 2022-12-21
 
+## [0.1.4] - 2022-12-21
 ### Added:
 - added mltu.augmentors (RandomBrightness, RandomRotate, RandomErodeDilate) - used for simple image augmentation;
+
 
 ## [0.1.3] - 2022-12-20
 
