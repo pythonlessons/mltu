@@ -5,12 +5,14 @@ from tqdm import tqdm
 import requests, gzip, os, hashlib
 
 import torch
-import torch.nn.functional as F
+import torch.nn as nn
 import torch.optim as optim
+from torchsummary import summary
 
 from model import Net
 
-path='Datasets/data'
+# define path to store dataset
+path='Datasets/mnist'
 def fetch(url):
     if os.path.exists(path) is False:
         os.makedirs(path)
@@ -33,12 +35,14 @@ test_targets = fetch("http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
 
 # uncomment to show images from dataset using OpenCV
 # for train_image, train_target in zip(train_data, train_targets):
-#     train_image = cv2.resize(train_image, (300, 300))
+#     train_image = cv2.resize(train_image, (400, 400))
 #     cv2.imshow("Image", train_image)
-#     cv2.waitKey(0)
-#     cv2.destroyAllWindows()
+#     # if Q button break this loop
+#     if cv2.waitKey(0) & 0xFF == ord('q'):
+#         break
+# cv2.destroyAllWindows()
 
-# define hyperparameters
+# define training hyperparameters
 n_epochs = 5
 batch_size_train = 64
 batch_size_test = 64
@@ -56,50 +60,67 @@ train_target_batches = [np.array(train_targets[i:i+batch_size_train]) for i in r
 test_batches = [np.array(test_data[i:i+batch_size_test]) for i in range(0, len(test_data), batch_size_test)]
 test_target_batches = [np.array(test_targets[i:i+batch_size_test]) for i in range(0, len(test_targets), batch_size_test)]
 
-# create network and optimizer
+# create network
 network = Net()
+
+# uncomment to print network summary
+summary(network, (1, 28, 28), device="cpu")
+
+# define loss function and optimizer
 optimizer = optim.Adam(network.parameters(), lr=learning_rate)
+loss_function = nn.CrossEntropyLoss()
 
 # create training loop
 def train(epoch):
+    # set network to training mode
     network.train()
 
     loss_sum = 0
+    # create a progress bar
     train_pbar = tqdm(zip(train_batches, train_target_batches), total=len(train_batches))
-    for data, target in train_pbar:
+    for index, (data, target) in enumerate(train_pbar, start=1):
 
         # convert data to torch.FloatTensor
         data = torch.from_numpy(data).float()
         target = torch.from_numpy(target).long()
 
+        # zero the parameter gradients
         optimizer.zero_grad()
+
+        # forward + backward + optimize
         output = network(data)
-        loss = F.nll_loss(output, target)
+        loss = loss_function(output, target)
         loss.backward()
         optimizer.step()
 
+        # update progress bar with loss value
         loss_sum += loss.item()
-        train_pbar.set_description(f"Epoch {epoch}, loss: {loss_sum / len(train_batches):.4f}")
+        train_pbar.set_description(f"Epoch {epoch}, loss: {loss_sum / index:.4f}")
 
 # create testing loop
 def test(epoch):
+    # set network to evaluation mode
     network.eval()
 
-    correct = 0
-    loss_sum = 0
+    correct, loss_sum = 0, 0
+    # create progress bar
     val_pbar = tqdm(zip(test_batches, test_target_batches), total=len(test_batches))
     with torch.no_grad():
-        for data, target in val_pbar:
+        for index, (data, target) in enumerate(val_pbar, start=1):
+
             # convert data to torch.FloatTensor
             data = torch.from_numpy(data).float()
             target = torch.from_numpy(target).long()
 
+            # forward pass
             output = network(data)
-            loss_sum += F.nll_loss(output, target).item() / target.size(0)
+
+            # update progress bar with loss and accuracy values
+            loss_sum += loss_function(output, target).item() / target.size(0)
             pred = output.data.max(1, keepdim=True)[1]
             correct += pred.eq(target.data.view_as(pred)).sum() / target.size(0)
 
-            val_pbar.set_description(f"val_loss: {loss_sum / len(test_batches):.4f}, val_accuracy: {correct / len(test_batches):.4f}")
+            val_pbar.set_description(f"val_loss: {loss_sum / index:.4f}, val_accuracy: {correct / index:.4f}")
 
 # train and test the model
 for epoch in range(1, n_epochs + 1):

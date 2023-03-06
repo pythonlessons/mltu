@@ -1,4 +1,4 @@
-## [1.0.0] - 2022-02-27
+## [1.0.0] - 2022-03-03
 
 ### Changed
 - detaching TensorFlow from mltu, now mltu is only a collection of utilities for training machine learning models

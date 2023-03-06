@@ -4,7 +4,6 @@ tqdm
 pandas
 numpy
 opencv-python
-tf2onnx
 onnxruntime # onnxruntime-gpu for GPU support
 librosa==0.9.2
 importlib==1.0.4
