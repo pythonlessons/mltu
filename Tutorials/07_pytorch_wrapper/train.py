@@ -1,11 +1,8 @@
 import os
-import cv2
 import numpy as np
-from tqdm import tqdm
 import requests, gzip, os, hashlib
 
 import torch
-import torch.nn.functional as F
 import torch.optim as optim
 
 from model import Net
@@ -15,6 +12,7 @@ from mltu.torch.model import Model
 from mltu.torch.metrics import Accuracy
 from mltu.torch.callbacks import EarlyStopping, ModelCheckpoint
 
+# define path to store dataset
 path='Datasets/data'
 def fetch(url):
     if os.path.exists(path) is False:
@@ -58,13 +56,14 @@ test_dataProvider = DataProvider(
 
 # create network, optimizer and define loss function
 network = Net()
+optimizer = optim.Adam(network.parameters(), lr=0.001)
+loss = torch.nn.CrossEntropyLoss()
+
 # put on cuda device if available
 if torch.cuda.is_available():
     network = network.cuda()
 
-optimizer = optim.Adam(network.parameters(), lr=0.001)
-loss = F.nll_loss
-
+# create callbacks
 earlyStopping = EarlyStopping(monitor='val_accuracy', patience=3, mode="max", verbose=1)
 modelCheckpoint = ModelCheckpoint('Models/07_pytorch_wrapper/model.pt', monitor='val_accuracy', mode="max", save_best_only=True, verbose=1)
 

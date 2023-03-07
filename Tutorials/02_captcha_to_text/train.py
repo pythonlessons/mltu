@@ -16,7 +16,7 @@ from mltu.augmentors import RandomBrightness, RandomRotate, RandomErodeDilate
 from model import train_model
 from configs import ModelConfigs
 
-import stow
+import os
 from urllib.request import urlopen
 from io import BytesIO
 from zipfile import ZipFile
@@ -26,15 +26,18 @@ def download_and_unzip(url, extract_to='Datasets'):
     zipfile = ZipFile(BytesIO(http_response.read()))
     zipfile.extractall(path=extract_to)
 
-if not stow.exists(stow.join('Datasets', 'captcha_images_v2')):
+if not os.path.exists(os.path.join('Datasets', 'captcha_images_v2')):
     download_and_unzip('https://github.com/AakashKumarNain/CaptchaCracker/raw/master/captcha_images_v2.zip', extract_to='Datasets')
 
 # Create a list of all the images and labels in the dataset
 dataset, vocab, max_len = [], set(), 0
-for file in stow.ls(stow.join('Datasets', 'captcha_images_v2')):
-    dataset.append([stow.relpath(file), file.name])
-    vocab.update(list(file.name))
-    max_len = max(max_len, len(file.name))
+captcha_path = os.path.join('Datasets', 'captcha_images_v2')
+for file in os.listdir(captcha_path):
+    file_path = os.path.join(captcha_path, file)
+    file_name = os.path.basename(file)
+    dataset.append([file_path, file_name])
+    vocab.update(list(file_name))
+    max_len = max(max_len, len(file_name))
 
 configs = ModelConfigs()
 
@@ -76,7 +79,7 @@ model.compile(
 )
 model.summary(line_length=110)
 # Define path to save the model
-stow.mkdir(configs.model_path)
+os.makedirs(configs.model_path, exist_ok=True)
 
 # Define callbacks
 earlystopper = EarlyStopping(monitor='val_CER', patience=50, verbose=1)
@@ -96,5 +99,5 @@ model.fit(
 )
 
 # Save training and validation datasets as csv files
-train_data_provider.to_csv(stow.join(configs.model_path, 'train.csv'))
-val_data_provider.to_csv(stow.join(configs.model_path, 'val.csv'))
+train_data_provider.to_csv(os.path.join(configs.model_path, 'train.csv'))
+val_data_provider.to_csv(os.path.join(configs.model_path, 'val.csv'))

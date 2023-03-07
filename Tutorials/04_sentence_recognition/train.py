@@ -16,12 +16,12 @@ from mltu.tensorflow.metrics import CERMetric, WERMetric
 from model import train_model
 from configs import ModelConfigs
 
-import stow
+import os
 from tqdm import tqdm
 
 # Must download and extract datasets manually from https://fki.tic.heia-fr.ch/databases/download-the-iam-handwriting-database to Datasets\IAM_Sentences
-sentences_txt_path = stow.join('Datasets', 'IAM_Sentences', 'ascii', 'sentences.txt')
-sentences_folder_path = stow.join('Datasets', 'IAM_Sentences', 'sentences')
+sentences_txt_path = os.path.join('Datasets', 'IAM_Sentences', 'ascii', 'sentences.txt')
+sentences_folder_path = os.path.join('Datasets', 'IAM_Sentences', 'sentences')
 
 dataset, vocab, max_len = [], set(), 0
 words = open(sentences_txt_path, "r").readlines()
@@ -41,8 +41,8 @@ for line in tqdm(words):
     # recplace '|' with ' ' in label
     label = label.replace('|', ' ')
 
-    rel_path = stow.join(sentences_folder_path, folder1, folder2, file_name)
-    if not stow.exists(rel_path):
+    rel_path = os.path.join(sentences_folder_path, folder1, folder2, file_name)
+    if not os.path.exists(rel_path):
         continue
 
     dataset.append([rel_path, label])
@@ -116,5 +116,5 @@ model.fit(
 )
 
 # Save training and validation datasets as csv files
-train_data_provider.to_csv(stow.join(configs.model_path, 'train.csv'))
-val_data_provider.to_csv(stow.join(configs.model_path, 'val.csv'))
+train_data_provider.to_csv(os.path.join(configs.model_path, 'train.csv'))
+val_data_provider.to_csv(os.path.join(configs.model_path, 'val.csv'))

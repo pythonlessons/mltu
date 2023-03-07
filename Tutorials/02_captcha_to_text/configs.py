@@ -1,4 +1,4 @@
-import stow
+import os
 from datetime import datetime
 
 from mltu.configs import BaseModelConfigs
@@ -6,7 +6,7 @@ from mltu.configs import BaseModelConfigs
 class ModelConfigs(BaseModelConfigs):
     def __init__(self):
         super().__init__()
-        self.model_path = stow.join('Models/02_captcha_to_text', datetime.strftime(datetime.now(), "%Y%m%d%H%M"))
+        self.model_path = os.path.join('Models/02_captcha_to_text', datetime.strftime(datetime.now(), "%Y%m%d%H%M"))
         self.vocab = ''
         self.height = 50
         self.width = 200

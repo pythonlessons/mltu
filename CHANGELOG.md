@@ -1,3 +1,16 @@
+## [1.0.1] - 2022-03-06
+### Changed
+- In all tutorials removed stow dependency and replaced with os package, to make it easier to use on Windows 11
+
+### Added:
+- added `mltu.torch`, that contains PyTorch utilities for training machine learning models
+- added `mltu.torch.dataProvider`, used to create PyTorch data loaders for training and validation
+- added `mltu.torch.models`, used to create PyTorch models, that wrapps whole model pipeline (training, validation, metrics, callbacks, etc.)
+- added `mltu.torch.callbacks`, used to create PyTorch callbacks, that may be used in training and validation
+- added `mltu.torch.metrics`, used to create PyTorch metrics, that may be used in training and validation
+- added 07_pytorch_tutorial tutorial
+
+
 ## [1.0.0] - 2022-03-06
 ### Changed
 - detaching TensorFlow from mltu, now mltu is only a collection of utilities for training machine learning models

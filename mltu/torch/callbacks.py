@@ -2,17 +2,15 @@ import os
 import logging
 import numpy as np
 
-# initialize logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-
 class Callback:
+    """ Base class used to build new callbacks."""
     def __init__(
-            self, 
-            monitor: str = "val_loss"
-    ):
+        self, 
+        monitor: str = "val_loss"
+    ) -> None:
         self.monitor = monitor
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.INFO)
 
     def on_train_begin(self, logs=None):
         pass
@@ -114,14 +112,15 @@ class EarlyStopping(Callback):
             self.wait += 1
             if self.wait >= self.patience:
                 self.stopped_epoch = epoch
-                self.model.stop_training = True # TODO to stop training
+                self.model.stop_training = True
 
     def on_train_end(self, logs=None):
         if self.stopped_epoch > 0 and self.verbose:
-            logger.info(f"Epoch {self.stopped_epoch}: early stopping")
+            self.logger.info(f"Epoch {self.stopped_epoch}: early stopping")
 
 
 class ModelCheckpoint(Callback):
+    """ ModelCheckpoint callback to save the model after every epoch or the best model across all epochs."""
     def __init__(
         self, 
         filepath: str,
@@ -129,7 +128,16 @@ class ModelCheckpoint(Callback):
         verbose: bool = False,
         save_best_only: bool = True,
         mode: str = "min",
-        ):
+        ) -> None:
+        """ ModelCheckpoint callback to save the model after every epoch or the best model across all epochs
+        
+        Args:
+            filepath (str): path to save the model file
+            monitor (str, optional): metric to monitor. Defaults to "val_loss".
+            verbose (bool, optional): verbosity mode. Defaults to False.
+            save_best_only (bool, optional): if True, the latest best model according to the quantity monitored will not be overwritten. Defaults to True.
+            mode (str, optional): one of {min, max, max_equal, min_equal}. Defaults to "min".
+        """
         super(ModelCheckpoint, self).__init__()
 
         self.filepath = filepath
@@ -145,6 +153,11 @@ class ModelCheckpoint(Callback):
                 "please choose one of min, max, max_equal, min_equal" % self.mode
             )
         
+        if self.mode == "min": self.monitor_op = np.less
+        elif self.mode == "max": self.monitor_op = np.greater
+        elif self.mode == "min_equal": self.monitor_op = np.less_equal
+        elif self.mode == "max_equal": self.monitor_op = np.greater_equal
+        
     def on_train_begin(self, logs=None):
         self.best = np.inf if self.mode == "min" or self.mode == "min_equal" else -np.Inf
 
@@ -157,24 +170,26 @@ class ModelCheckpoint(Callback):
         if current is None:
             return
 
-        if self.mode == "min" and np.less(current, self.best):
+        if self.monitor_op(current, self.best):
+            previous = self.best
             self.best = current
-            self.save_model(epoch, current)
-        elif self.mode == "max" and np.greater(current, self.best):
-            self.best = current
-            self.save_model(epoch, current)
-        elif self.mode == "min_equal" and np.less_equal(current, self.best):
-            self.best = current
-            self.save_model(epoch, current)
-        elif self.mode == "max_equal" and np.greater_equal(current, self.best):
-            self.best = current
-            self.save_model(epoch, current)
+            self.save_model(epoch, current, previous)
         else:
             if not self.save_best_only:
-                self.save_model(epoch, current)
+                self.save_model(epoch, current, previous=None)
 
-    def save_model(self, epoch: int, current: float = None):
+    def save_model(self, epoch: int, best: float, previous: float = None):
+        """ Save model to filepath
+        
+        Args:
+            epoch (int): current epoch
+            best (float): current best value
+            previous (float, optional): previous best value. Defaults to None.
+        """
         if self.verbose:
-            logger.info(f"Epoch {epoch}: {self.monitor} improved from {self.best:.5f} to {current:.5f}, saving model to {self.filepath}")
+            if previous is None:
+                self.logger.info(f"Epoch {epoch}: {self.monitor} got {best:.5f}, saving model to {self.filepath}")
+            else:
+                self.logger.info(f"Epoch {epoch}: {self.monitor} improved from {previous:.5f} to {best:.5f}, saving model to {self.filepath}")
 
         self.model.save(self.filepath)

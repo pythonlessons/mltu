@@ -1,4 +1,4 @@
-import stow
+import os
 from tqdm import tqdm
 import tensorflow as tf
 
@@ -84,7 +84,7 @@ model.compile(
 model.summary(line_length=110)
 
 # Define path to save the model
-stow.mkdir(configs.model_path)
+os.makedirs(configs.model_path, exist_ok=True)
 
 # Define callbacks
 earlystopper = EarlyStopping(monitor='val_CER', patience=10, verbose=1)
@@ -104,5 +104,5 @@ model.fit(
 )
 
 # Save training and validation datasets as csv files
-train_data_provider.to_csv(stow.join(configs.model_path, 'train.csv'))
-val_data_provider.to_csv(stow.join(configs.model_path, 'val.csv'))
+train_data_provider.to_csv(os.path.join(configs.model_path, 'train.csv'))
+val_data_provider.to_csv(os.path.join(configs.model_path, 'val.csv'))

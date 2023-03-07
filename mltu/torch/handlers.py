@@ -4,6 +4,7 @@ from .metrics import Metric
 from .callbacks import Callback
 
 class MetricsHandler:
+    """ Metrics handler class for training and testing loops"""
     def __init__(self, metrics: typing.List[Metric]):
         self.metrics = metrics
 
@@ -45,6 +46,7 @@ class MetricsHandler:
     
 
 class CallbacksHandler:
+    """ Callbacks handler class for training and testing loops"""
     def __init__(self, model, callbacks: typing.List[Callback]):
         self.callbacks = callbacks
 
@@ -71,14 +73,6 @@ class CallbacksHandler:
         for callback in self.callbacks:
             callback.on_epoch_end(epoch, logs)
 
-    def on_train_batch_begin(self, batch: int, logs=None):
-        for callback in self.callbacks:
-            callback.on_train_batch_begin(batch, logs)
-
-    def on_train_batch_end(self, batch: int, logs=None):
-        for callback in self.callbacks:
-            callback.on_train_batch_end(batch, logs)
-
     def on_test_begin(self, logs=None):
         for callback in self.callbacks:
             callback.on_test_begin(logs)
@@ -87,18 +81,20 @@ class CallbacksHandler:
         for callback in self.callbacks:
             callback.on_test_end(logs)
 
-    def on_test_batch_begin(self, batch: int, logs=None):
-        for callback in self.callbacks:
-            callback.on_test_batch_begin(batch, logs)
-
-    def on_test_batch_end(self, batch: int, logs=None):
-        for callback in self.callbacks:
-            callback.on_test_batch_end(batch, logs)
-
-    def on_batch_begin(self, batch: int, logs=None):
+    def on_batch_begin(self, batch: int, logs=None, train: bool=True):
         for callback in self.callbacks:
             callback.on_batch_begin(batch, logs)
 
-    def on_batch_end(self, batch: int, logs=None):
+            if train:
+                callback.on_train_batch_begin(batch, logs)
+            else:
+                callback.on_test_batch_begin(batch, logs)
+
+    def on_batch_end(self, batch: int, logs=None, train: bool=True):
         for callback in self.callbacks:
             callback.on_batch_end(batch, logs)
+
+            if train:
+                callback.on_train_batch_end(batch, logs)
+            else:
+                callback.on_test_batch_end(batch, logs)

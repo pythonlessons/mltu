@@ -1,5 +1,4 @@
 import os
-import stow
 import numpy as np
 import onnxruntime as ort
 
@@ -22,8 +21,9 @@ class OnnxInferenceModel:
         self.force_cpu = force_cpu
         self.default_model_name = default_model_name
 
-        if isinstance(stow.artefact(self.model_path), stow.Directory):
-            self.model_path = stow.join(self.model_path, self.default_model_name)
+        # check if model path is a directory with os path
+        if os.path.isdir(self.model_path):
+            self.model_path = os.path.join(self.model_path, self.default_model_name)
 
         if not os.path.exists(self.model_path):
             raise Exception(f"Model path ({self.model_path}) does not exist")

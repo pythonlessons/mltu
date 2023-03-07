@@ -1,4 +1,4 @@
-import stow
+import os
 from datetime import datetime
 
 from mltu.configs import BaseModelConfigs
@@ -6,7 +6,7 @@ from mltu.configs import BaseModelConfigs
 class ModelConfigs(BaseModelConfigs):
     def __init__(self):
         super().__init__()
-        self.model_path = stow.join('Models/1_image_to_word', datetime.strftime(datetime.now(), "%Y%m%d%H%M"))
+        self.model_path = os.path.join('Models/1_image_to_word', datetime.strftime(datetime.now(), "%Y%m%d%H%M"))
         self.vocab = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
         self.height = 32
         self.width = 128

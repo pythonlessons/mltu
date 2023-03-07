@@ -2,7 +2,7 @@ import tensorflow as tf
 try: [tf.config.experimental.set_memory_growth(gpu, True) for gpu in tf.config.experimental.list_physical_devices('GPU')]
 except: pass
 
-import stow
+import os
 import tarfile
 import pandas as pd
 from tqdm import tqdm
@@ -33,8 +33,8 @@ def download_and_unzip(url, extract_to='Datasets', chunk_size=1024*1024):
     tarFile.extractall(path=extract_to)
     tarFile.close()
 
-dataset_path = stow.join('Datasets', 'LJSpeech-1.1')
-if not stow.exists(dataset_path):
+dataset_path = os.path.join('Datasets', 'LJSpeech-1.1')
+if not os.path.exists(dataset_path):
     download_and_unzip('https://data.keithito.com/data/speech/LJSpeech-1.1.tar.bz2', extract_to='Datasets')
 
 dataset_path = "Datasets/LJSpeech-1.1"
@@ -119,5 +119,5 @@ model.fit(
 )
 
 # Save training and validation datasets as csv files
-train_data_provider.to_csv(stow.join(configs.model_path, 'train.csv'))
-val_data_provider.to_csv(stow.join(configs.model_path, 'val.csv'))
+train_data_provider.to_csv(os.path.join(configs.model_path, 'train.csv'))
+val_data_provider.to_csv(os.path.join(configs.model_path, 'val.csv'))
