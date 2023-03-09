@@ -34,15 +34,16 @@ for line in tqdm(words):
         continue
 
     folder1 = line_split[0][:3]
-    folder2 = line_split[0][:8]
+    folder2 = "-".join(line_split[0].split("-")[:2])
     file_name = line_split[0] + ".png"
     label = line_split[-1].rstrip('\n')
 
-    # recplace '|' with ' ' in label
+    # replace '|' with ' ' in label
     label = label.replace('|', ' ')
 
     rel_path = os.path.join(sentences_folder_path, folder1, folder2, file_name)
     if not os.path.exists(rel_path):
+        print(f"File not found: {rel_path}")
         continue
 
     dataset.append([rel_path, label])

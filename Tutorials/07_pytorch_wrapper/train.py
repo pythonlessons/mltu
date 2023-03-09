@@ -64,9 +64,25 @@ if torch.cuda.is_available():
     network = network.cuda()
 
 # create callbacks
-earlyStopping = EarlyStopping(monitor='val_accuracy', patience=3, mode="max", verbose=1)
-modelCheckpoint = ModelCheckpoint('Models/07_pytorch_wrapper/model.pt', monitor='val_accuracy', mode="max", save_best_only=True, verbose=1)
+earlyStopping = EarlyStopping(
+    monitor='val_accuracy', 
+    patience=3, 
+    mode="max", 
+    verbose=1
+    )
+modelCheckpoint = ModelCheckpoint(
+    'Models/07_pytorch_wrapper/model.pt', 
+    monitor='val_accuracy', 
+    mode="max", 
+    save_best_only=True, 
+    verbose=1
+    )
 
 # create model object that will handle training and testing of the network
 model = Model(network, optimizer, loss, metrics=[Accuracy()])
-model.fit(train_dataProvider, test_dataProvider, epochs=100, callbacks=[earlyStopping, modelCheckpoint])
+model.fit(
+    train_dataProvider, 
+    test_dataProvider, 
+    epochs=100, 
+    callbacks=[earlyStopping, modelCheckpoint]
+    )

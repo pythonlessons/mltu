@@ -5,4 +5,4 @@
 4. [Handwritten sentence recognition with TensorFlow](https://pylessons.com/handwritten-sentence-recognition), code in ```Tutorials\04_sentence_recognition``` folder;
 5. [Introduction to speech recognition with TensorFlow](https://pylessons.com/speech-recognition), code in ```Tutorials\05_speech_recognition``` folder;
 6. [Introduction to PyTorch in a practical way](https://pylessons.com/pytorch-introduction), code in ```Tutorials\06_pytorch_introduction``` folder;
-7. 
+7. [Using custom wrapper to simplify PyTorch models training pipeline](https://pylessons.com/pytorch-introduction), code in ```Tutorials\07_pytorch_wrapper``` folder;
