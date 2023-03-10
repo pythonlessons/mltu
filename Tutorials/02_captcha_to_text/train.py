@@ -34,7 +34,7 @@ dataset, vocab, max_len = [], set(), 0
 captcha_path = os.path.join('Datasets', 'captcha_images_v2')
 for file in os.listdir(captcha_path):
     file_path = os.path.join(captcha_path, file)
-    file_name = os.path.basename(file)
+    file_name = os.path.splitext(file)[0]
     dataset.append([file_path, file_name])
     vocab.update(list(file_name))
     max_len = max(max_len, len(file_name))
