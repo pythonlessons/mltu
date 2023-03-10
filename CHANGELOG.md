@@ -1,3 +1,14 @@
+## [1.0.2] - 2022-03-... (unreleased)
+### Changed
+- changes `OnnxInferenceModel` in `mltu.torch.inferenceModels` to load custom metadata from saved ONNX model
+
+### Added:
+- added `mltu.torch.losses`, used to create PyTorch losses, that may be used in training and validation
+- added CTC loss to `mltu.torch.losses` that can be used for training CTC based models
+- added `Model2onnx` and `Tensorboard` callbacks to `mltu.torch.callbacks`, used to create PyTorch callbacks, that may be used in training and validation
+- added `CERMetric` to `mltu.torch.metrics`, used to create PyTorch metrics, that may be used in training and validation
+- created 08 pytorch tutorial, that shows how to use mltu.torch to train CTC based models
+
 ## [1.0.1] - 2022-03-06
 ### Changed
 - In all tutorials removed stow dependency and replaced with os package, to make it easier to use on Windows 11

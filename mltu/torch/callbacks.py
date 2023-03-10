@@ -1,6 +1,10 @@
 import os
 import logging
 import numpy as np
+from datetime import datetime
+
+import torch.onnx
+from torch.utils.tensorboard import SummaryWriter
 
 class Callback:
     """ Base class used to build new callbacks."""
@@ -193,3 +197,137 @@ class ModelCheckpoint(Callback):
                 self.logger.info(f"Epoch {epoch}: {self.monitor} improved from {previous:.5f} to {best:.5f}, saving model to {self.filepath}")
 
         self.model.save(self.filepath)
+
+
+class TensorBoard(Callback):
+    """ TensorBoard basic visualizations. """
+    def __init__(self, log_dir: str = "logs", comment: str = None):
+        """ TensorBoard basic visualizations.
+        
+        Args:
+            log_dir (str, optional): the path of the directory where to save the log files to be parsed by TensorBoard. Defaults to "logs".
+            comment (str, optional): comment to append to the default log_dir. Defaults to None.
+        """
+        super(TensorBoard, self).__init__()
+
+        self.log_dir = log_dir
+
+        self.writer = None
+        self.comment = str(comment) if not None else datetime.now().strftime("%Y%m%d-%H%M%S")
+
+    def on_train_begin(self, logs=None):
+        if self.writer is None:
+            self.writer = SummaryWriter(self.log_dir, comment=self.comment)
+
+    def update_lr(self, epoch: int):
+        for param_group in self.model.optimizer.param_groups:
+            self.writer.add_scalar("learning_rate", param_group["lr"], epoch)
+
+    def update_histogram(self, epoch: int):
+        for name, param in self.model.model.named_parameters():
+            self.writer.add_histogram(name, param.clone().cpu().data.numpy(), epoch)
+
+    def parse_key(self, key: str):
+        if key.startswith("val_"):
+            return f"{key[4:].capitalize()}/test"
+        else:
+            return f"{key.capitalize()}/train"
+
+    def on_epoch_end(self, epoch: int, logs=None):
+        logs = logs or {}
+        for key, value in logs.items():
+            self.writer.add_scalar(self.parse_key(key), value, epoch)
+
+        self.update_lr(epoch)
+        self.update_histogram(epoch)
+
+    def on_train_end(self, logs=None):
+        self.writer.close()
+
+
+class Model2onnx(Callback):
+    """Converts the model from PyTorch to ONNX format after training."""
+    def __init__(
+        self, 
+        saved_model_path: str,
+        input_shape: tuple,
+        export_params: bool=True,
+        opset_version: int=14,
+        do_constant_folding: bool=True,
+        input_names: list=['input'],
+        output_names: list=['output'],
+        dynamic_axes: dict={'input' : {0 : 'batch_size'}, 
+                            'output' : {0 : 'batch_size'}},
+        verbose: bool=False,
+        metadata: dict=None,
+        ) -> None:
+        """ Converts the model from PyTorch to ONNX format after training.
+
+        Args:
+            saved_model_path (str): path to the saved model
+            input_shape (tuple): input shape of the model
+            export_params (bool, optional): if True, all model parameters will be exported. Defaults to True.
+            opset_version (int, optional): the ONNX version to export the model to. Defaults to 14.
+            do_constant_folding (bool, optional): whether to execute constant folding for optimization. Defaults to True.
+            input_names (list, optional): the model's input names. Defaults to ['input'].
+            output_names (list, optional): the model's output names. Defaults to ['output'].
+            dynamic_axes (dict, optional): dictionary specifying dynamic axes. Defaults to {'input' : {0 : 'batch_size'}, 'output' : {0 : 'batch_size'}}.
+            verbose (bool, optional): if True, information about the conversion will be printed. Defaults to False.
+            metadata (dict, optional): dictionary containing model metadata. Defaults to None.
+        """
+        super().__init__()
+        self.saved_model_path = saved_model_path
+        self.input_shape = input_shape
+        self.export_params = export_params
+        self.opset_version = opset_version
+        self.do_constant_folding = do_constant_folding
+        self.input_names = input_names
+        self.output_names = output_names
+        self.dynamic_axes = dynamic_axes
+        self.verbose = verbose
+        self.metadata = metadata
+        
+        self.onnx_model_path = saved_model_path.replace(".pt", ".onnx")
+
+    def on_train_end(self, logs=None):
+        self.model.model.load_state_dict(torch.load(self.saved_model_path))
+
+        # place model on cpu
+        self.model.model.to("cpu")
+
+        # set the model to inference mode
+        self.model.model.eval()
+        
+        # convert the model to ONNX format
+        dummy_input = torch.randn(self.input_shape)
+
+        # Export the model
+        torch.onnx.export(
+            self.model.model,               
+            dummy_input,                         
+            self.onnx_model_path,   
+            export_params=self.export_params,        
+            opset_version=self.opset_version,          
+            do_constant_folding=self.do_constant_folding,  
+            input_names = self.input_names,   
+            output_names = self.output_names, 
+            dynamic_axes = self.dynamic_axes,
+            )
+        
+        if self.verbose:
+            self.logger.info(f"Model saved to {self.onnx_model_path}")
+
+        if self.metadata and isinstance(self.metadata, dict):
+            import onnx
+
+            # Load the ONNX model
+            onnx_model = onnx.load(self.onnx_model_path)
+
+            # Add the metadata dictionary to the model's metadata_props attribute
+            for key, value in self.metadata.items():
+                meta = onnx_model.metadata_props.add()
+                meta.key = key
+                meta.value = value
+
+            # Save the modified ONNX model
+            onnx.save(onnx_model, self.onnx_model_path)
