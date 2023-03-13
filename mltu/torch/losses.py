@@ -11,7 +11,7 @@ class CTCLoss(nn.Module):
             blank: Index of the blank label
         """
         super(CTCLoss, self).__init__()
-        self.ctc_loss = nn.CTCLoss(blank=blank)
+        self.ctc_loss = nn.CTCLoss(blank=blank, reduction='mean', zero_infinity=True)
 
     def forward(self, output, target):
         """

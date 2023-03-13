@@ -55,6 +55,7 @@ data_provider = DataProvider(
         LabelIndexer(configs.vocab),
         LabelPadding(max_word_length=configs.max_text_length, padding_value=len(configs.vocab))
         ],
+    use_cache=True
 )
 # Split the dataset into training and validation sets
 train_dataProvider, test_dataProvider = data_provider.split(split = 0.9)
@@ -62,7 +63,7 @@ train_dataProvider, test_dataProvider = data_provider.split(split = 0.9)
 # Augment training data with random brightness, rotation and erode/dilate
 train_dataProvider.augmentors = [RandomBrightness(), RandomRotate(), RandomErodeDilate()]
 
-network = CaptchaModel(len(configs.vocab), activation='relu', dropout=0.2)
+network = CaptchaModel(len(configs.vocab), activation='leaky_relu', dropout=0.3)
 loss = CTCLoss(blank=len(configs.vocab))
 optimizer = optim.Adam(network.parameters(), lr=0.001)
 
