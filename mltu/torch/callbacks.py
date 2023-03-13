@@ -71,7 +71,7 @@ class EarlyStopping(Callback):
         min_delta: float = 0.0, 
         patience: int = 0, 
         verbose: bool = False,
-        mode: str = "max_equal",
+        mode: str = "min",
         ):
         super(EarlyStopping, self).__init__()
 
@@ -122,6 +122,17 @@ class EarlyStopping(Callback):
         if self.stopped_epoch > 0 and self.verbose:
             self.logger.info(f"Epoch {self.stopped_epoch}: early stopping")
 
+def assign_mode(mode: str):
+    if mode not in ["min", "max", "max_equal", "min_equal"]:
+        raise ValueError(
+            "ModelCheckpoint mode %s is unknown, "
+            "please choose one of min, max, max_equal, min_equal" % mode
+        )
+
+    if mode == "min": return np.less
+    elif mode == "max": return np.greater
+    elif mode == "min_equal": return np.less_equal
+    elif mode == "max_equal": return np.greater_equal
 
 class ModelCheckpoint(Callback):
     """ ModelCheckpoint callback to save the model after every epoch or the best model across all epochs."""
@@ -151,16 +162,7 @@ class ModelCheckpoint(Callback):
         self.save_best_only = save_best_only
         self.best = None
 
-        if self.mode not in ["min", "max", "max_equal", "min_equal"]:
-            raise ValueError(
-                "ModelCheckpoint mode %s is unknown, "
-                "please choose one of min, max, max_equal, min_equal" % self.mode
-            )
-        
-        if self.mode == "min": self.monitor_op = np.less
-        elif self.mode == "max": self.monitor_op = np.greater
-        elif self.mode == "min_equal": self.monitor_op = np.less_equal
-        elif self.mode == "max_equal": self.monitor_op = np.greater_equal
+        self.monitor_op = assign_mode(self.mode)
         
     def on_train_begin(self, logs=None):
         self.best = np.inf if self.mode == "min" or self.mode == "min_equal" else -np.Inf
@@ -331,3 +333,62 @@ class Model2onnx(Callback):
 
             # Save the modified ONNX model
             onnx.save(onnx_model, self.onnx_model_path)
+
+class ReduceLROnPlateau(Callback):
+    """ Reduce learning rate when a metric has stopped improving.
+    Models often benefit from reducing the learning rate by a factor of 2-10 once learning stagnates.
+    This callback monitors a quantity and if no improvement is seen for a 'patience' number of epochs,
+    the learning rate is reduced.
+    """
+    def __init__(
+        self, 
+        monitor: str = "val_loss", 
+        factor: float = 0.1, 
+        patience: int = 10, 
+        min_lr: float = 1e-6, 
+        mode: str = "min",
+        verbose: int = False,
+        ) -> None:
+        """ Reduce learning rate when a metric has stopped improving.
+        
+        Args:
+            monitor (str, optional): quantity to be monitored. Defaults to "val_loss".
+            factor (float, optional): factor by which the learning rate will be reduced. Defaults to 0.1.
+            patience (int, optional): number of epochs with no improvement after which learning rate will be reduced. Defaults to 10.
+            min_lr (float, optional): lower bound on the learning rate. Defaults to 1e-6.
+            verbose (int, optional): verbosity mode. Defaults to 0.
+            mode (str, optional): one of {min, max, max_equal, min_equal}. Defaults to "min". 
+        """
+        super(ReduceLROnPlateau, self).__init__()
+
+        self.monitor = monitor
+        self.factor = factor
+        self.patience = patience
+        self.min_lr = min_lr
+        self.verbose = verbose
+        self.mode = mode
+
+        self.monitor_op = assign_mode(self.mode)
+
+    def on_train_begin(self, logs=None):
+        self.wait = 0
+        self.best = np.inf if self.mode == "min" or self.mode == "min_equal" else -np.Inf
+
+    def on_epoch_end(self, epoch: int, logs=None):
+        current = self.get_monitor_value(logs)
+        if current is None:
+            return
+        
+        if self.monitor_op(current, self.best):
+            self.best = current
+            self.wait = 0
+
+        else:
+            self.wait += 1
+            if self.wait >= self.patience:
+                self.wait = 0
+                current_lr = self.model.optimizer.param_groups[0]["lr"]
+                new_lr = max(current_lr * self.factor, self.min_lr)
+                self.model.optimizer.param_groups[0]["lr"] = new_lr
+                if self.verbose:
+                    self.logger.info(f"Epoch {epoch}: reducing learning rate to {new_lr}.")

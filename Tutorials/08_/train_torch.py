@@ -5,12 +5,13 @@ from zipfile import ZipFile
 
 import torch
 import torch.optim as optim
+from torchsummaryX import summary
 
 from mltu.torch.dataProvider import DataProvider
 from mltu.torch.model import Model
 from mltu.torch.losses import CTCLoss
 from mltu.torch.metrics import CERMetric
-from mltu.torch.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard, Model2onnx
+from mltu.torch.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard, Model2onnx, ReduceLROnPlateau
 
 from mltu.preprocessors import ImageReader
 from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding
@@ -31,12 +32,10 @@ if not os.path.exists(os.path.join('Datasets', 'captcha_images_v2')):
 dataset, vocab, max_len = [], set(), 0
 captcha_path = os.path.join('Datasets', 'captcha_images_v2')
 for file in os.listdir(captcha_path):
-    file_path = os.path.join(captcha_path, file)
-    # Get the file name without the extension
-    file_text = os.path.splitext(file)[0]
-    dataset.append([file_path, file_text])
-    vocab.update(list(file_text))
-    max_len = max(max_len, len(file_text))
+    label = os.path.splitext(file)[0] # Get the file name without the extension
+    dataset.append([os.path.join(captcha_path, file), label])
+    vocab.update(list(label))
+    max_len = max(max_len, len(label))
 
 configs = ModelConfigs()
 
@@ -63,9 +62,12 @@ train_dataProvider, test_dataProvider = data_provider.split(split = 0.9)
 # Augment training data with random brightness, rotation and erode/dilate
 train_dataProvider.augmentors = [RandomBrightness(), RandomRotate(), RandomErodeDilate()]
 
-network = CaptchaModel(len(configs.vocab))
+network = CaptchaModel(len(configs.vocab), activation='relu', dropout=0.2)
 loss = CTCLoss(blank=len(configs.vocab))
 optimizer = optim.Adam(network.parameters(), lr=0.001)
+
+# uncomment to print network summary
+summary(network, torch.zeros((1, configs.height, configs.width, 3)))
 
 # put on cuda device if available
 if torch.cuda.is_available():
@@ -75,6 +77,7 @@ if torch.cuda.is_available():
 earlyStopping = EarlyStopping(monitor='val_CER', patience=50, mode="min", verbose=1)
 modelCheckpoint = ModelCheckpoint('Models/08_/model.pt', monitor='val_CER', mode="min", save_best_only=True, verbose=1)
 tb_callback = TensorBoard('Models/08_/logs')
+reduce_lr = ReduceLROnPlateau(monitor='val_CER', factor=0.9, patience=10, verbose=1, mode='min', min_lr=1e-6)
 model2onnx = Model2onnx(
     saved_model_path='Models/08_/model.pt', 
     input_shape=(1, configs.height, configs.width, 3), 
@@ -87,8 +90,8 @@ model = Model(network, optimizer, loss, metrics=[CERMetric(configs.vocab)])
 model.fit(
     train_dataProvider, 
     test_dataProvider, 
-    epochs=1, 
-    callbacks=[earlyStopping, tb_callback, model2onnx]
+    epochs=1000, 
+    callbacks=[earlyStopping, modelCheckpoint, tb_callback, reduce_lr, model2onnx]
     )
 
 # # Save training and validation datasets as csv files
