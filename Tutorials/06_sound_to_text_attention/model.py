@@ -21,7 +21,7 @@ class Attention(layers.Layer):
                                initializer='zeros', trainable=True)        
         super(Attention, self).build(input_shape)
  
-    def call(self,x):
+    def call(self, x):
         # Alignment scores. Pass them through tanh function
         e = K.tanh(K.dot(x,self.W)+self.b)
         # Remove dimension of size 1
@@ -32,7 +32,7 @@ class Attention(layers.Layer):
         alpha = K.expand_dims(alpha, axis=-1)
         # Compute the context vector
         context = x * alpha
-        context = K.sum(context, axis=1)
+        # context = K.sum(context, axis=1)
         return context
 
 

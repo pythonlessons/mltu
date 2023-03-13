@@ -51,6 +51,7 @@ metadata_df = metadata_df[["file_name", "normalized_transcription"]]
 
 # structure the dataset where each row is a list of [wav_file_path, sound transcription]
 dataset = [[f"Datasets/LJSpeech-1.1/wavs/{file}.wav", label.lower()] for file, label in metadata_df.values.tolist()]
+# dataset = dataset[:1000]
 
 # Create a ModelConfigs object to store model configurations
 configs = ModelConfigs()
@@ -89,7 +90,7 @@ train_data_provider, val_data_provider = data_provider.split(split = 0.9)
 model = train_model(
     input_dim = configs.input_shape,
     output_dim = len(configs.vocab),
-    dropout=0.5
+    dropout=0.2
 )
 
 # Compile the model and print summary
