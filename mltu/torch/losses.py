@@ -11,7 +11,8 @@ class CTCLoss(nn.Module):
             blank: Index of the blank label
         """
         super(CTCLoss, self).__init__()
-        self.ctc_loss = nn.CTCLoss(blank=blank, reduction='mean', zero_infinity=True)
+        self.ctc_loss = nn.CTCLoss(blank=blank, reduction='mean', zero_infinity=False)
+        self.blank = blank
 
     def forward(self, output, target):
         """
@@ -22,10 +23,19 @@ class CTCLoss(nn.Module):
         Returns:
             loss: Scalar
         """
-        output = output.permute(1, 0, 2)  # (sequence_length, batch_size, num_classes)
-        output_lengths = torch.full(size=(output.size(1),), fill_value=output.size(0), dtype=torch.int32)
-        target_lengths = torch.full(size=(output.size(1),), fill_value=target.size(1), dtype=torch.int32)
+        # Remove padding and blank tokens from target
+        target_lengths = torch.sum(target != self.blank, dim=1)
+        target_unpadded = target[target != self.blank].view(-1)
+        # target_unpadded = []
+        # for i in range(target.size(0)):
+        #     target_unpadded.append(target[i, :target_lengths[i]])
+        # target_unpadded = torch.cat(target_unpadded)
 
-        loss = self.ctc_loss(output, target, output_lengths, target_lengths)
+
+        output = output.permute(1, 0, 2)  # (sequence_length, batch_size, num_classes)
+        output_lengths = torch.full(size=(output.size(1),), fill_value=output.size(0), dtype=torch.int64)
+        # target_lengths = torch.full(size=(output.size(1),), fill_value=target.size(1), dtype=torch.int64)
+
+        loss = self.ctc_loss(output, target_unpadded, output_lengths, target_lengths)
 
         return loss

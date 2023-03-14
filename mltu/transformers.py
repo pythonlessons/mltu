@@ -78,7 +78,7 @@ class ImageResizer(Transformer):
                 label = self.resize_maintaining_aspect_ratio(label, self._width, self._height, self._padding_color)
 
             return image, label
-
+        
         # Resizes without maintaining aspect ratio.
         return cv2.resize(data, (self._width, self._height)), label
 

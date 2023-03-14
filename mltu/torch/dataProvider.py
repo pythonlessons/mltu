@@ -70,6 +70,11 @@ class DataProvider(DataProvider):
         if self._executor is None:
             self.start_executor()
 
-        batch_data, batch_annotations = zip(*self._executor.map(self.process_data, dataset_batch))
+        batch_data, batch_annotations = [], []
+        for data, annotation in self._executor.map(self.process_data, dataset_batch):
+            if data is None or annotation is None:
+                continue
+            batch_data.append(data)
+            batch_annotations.append(annotation)
 
         return np.array(batch_data), np.array(batch_annotations)

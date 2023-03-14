@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.nn.init as init
 
 def activation_layer(activation: str='relu', alpha: float=0.1, inplace: bool=True):
     """ Activation layer wrapper for LeakyReLU and ReLU activation functions
@@ -23,8 +24,8 @@ class ResidualBlock(nn.Module):
 
         self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1)
         self.bn2 = nn.BatchNorm2d(out_channels)
-        # self.activation = nn.LeakyReLU(negative_slope=0.1) if activation == 'leaky_relu' else nn.ReLU(inplace=True)
-        # self.dropout = nn.Dropout2d(p=dropout)
+
+        self.dropout = nn.Dropout(p=dropout)
         
         self.shortcut = None
         if skip_conv:
@@ -32,27 +33,24 @@ class ResidualBlock(nn.Module):
                 self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride)
 
         self.act2 = activation_layer(activation)
-        self.dropout = nn.Dropout2d(p=dropout)
         
     def forward(self, x):
         skip = x
         
-        out = self.bn1(self.conv1(x))
-        out = self.act1(out)
-        # out = self.dropout(out)
+        out = self.act1(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
+
         if self.shortcut is not None:
             out += self.shortcut(skip)
-        # out += skip
+
         out = self.act2(out)
-        
         out = self.dropout(out)
         
         return out
 
-class CaptchaModel(nn.Module):
+class Network(nn.Module):
     def __init__(self, num_chars, activation='leaky_relu', dropout=0.2):
-        super(CaptchaModel, self).__init__()
+        super(Network, self).__init__()
 
         self.x1 = ResidualBlock(3, 16, skip_conv = True, stride=1, activation=activation, dropout=dropout)
         self.x2 = ResidualBlock(16, 16, skip_conv = True, stride=2, activation=activation, dropout=dropout)
@@ -64,16 +62,14 @@ class CaptchaModel(nn.Module):
         self.x6 = ResidualBlock(32, 64, skip_conv = True, stride=2, activation=activation, dropout=dropout)
         self.x7 = ResidualBlock(64, 64, skip_conv = True, stride=1, activation=activation, dropout=dropout)
 
-        self.x8 = ResidualBlock(64, 64, skip_conv = True, stride=2, activation=activation, dropout=dropout)
+        # self.x8 = ResidualBlock(64, 64, skip_conv = True, stride=2, activation=activation, dropout=dropout)
+        self.x8 = ResidualBlock(64, 64, skip_conv = False, stride=1, activation=activation, dropout=dropout)
         self.x9 = ResidualBlock(64, 64, skip_conv = False, stride=1, activation=activation, dropout=dropout)
 
         self.lstm = nn.LSTM(64, 128, bidirectional=True, num_layers=1, batch_first=True)
-        # self.lstm_dropout = nn.Dropout(p=dropout)
+        self.lstm_dropout = nn.Dropout(p=dropout)
 
         self.output = nn.Linear(256, num_chars + 1)
-        
-        # self.output = nn.Linear(64, num_chars + 1)
-        self.softmax = nn.LogSoftmax(dim=2)
 
     def forward(self, images):
         # normalize images between 0 and 1
@@ -99,12 +95,9 @@ class CaptchaModel(nn.Module):
         x = x.reshape(x.size(0), -1, x.size(1))
 
         x, _ = self.lstm(x)
-        # x = self.lstm_dropout(x)
-
-        # dropout to lstm output
+        x = self.lstm_dropout(x)
 
         x = self.output(x)
-        # x = F.log_softmax(x, 2)
-        x = self.softmax(x)
+        x = F.log_softmax(x, 2)
 
         return x

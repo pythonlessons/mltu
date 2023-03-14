@@ -1,4 +1,8 @@
 import torch
+import numpy as np
+from itertools import groupby
+from mltu.utils.text_utils import get_cer
+
 
 class Metric:
     """ Base class for all metrics"""
@@ -53,10 +57,7 @@ class Accuracy(Metric):
     def result(self):
         """ Return metric value"""
         return self.correct / self.total
-    
-import numpy as np
-from itertools import groupby
-from mltu.utils.text_utils import get_cer
+
 
 class CERMetric(Metric):
     """A custom PyTorch metric to compute the Character Error Rate (CER).
@@ -87,7 +88,7 @@ class CERMetric(Metric):
         # use groupby to find continuous same indexes
         grouped_preds = [[k for k,_ in groupby(preds)] for preds in argmax_preds]
 
-        # convert indexes to chars
+        # convert indexes to strings
         output_texts = ["".join([self.vocabulary[k] for k in group if k < len(self.vocabulary)]) for group in grouped_preds]
         target_texts = ["".join([self.vocabulary[k] for k in group if k < len(self.vocabulary)]) for group in target]
 

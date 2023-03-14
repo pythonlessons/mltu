@@ -13,7 +13,9 @@ class ImageReader:
         self._method = method
 
     def __call__(self, image_path: str, label: str):
-        return cv2.imread(image_path, self._method), label
+        image = cv2.imread(image_path, self._method)
+
+        return image, label
 
 class WavReader:
     """Read wav file with librosa and return audio and label

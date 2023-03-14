@@ -53,6 +53,7 @@ class DataProvider:
         self._use_cache = use_cache
         self._step = 0
         self._cache = {}
+        self._on_epoch_end_remove = []
 
     def __len__(self):
         """ Denotes the number of batches per epoch """
@@ -113,6 +114,12 @@ class DataProvider:
         self._epoch += 1
         if self._shuffle:
             np.random.shuffle(self._dataset)
+
+        # Remove any samples that were marked for removal
+        for remove in self._on_epoch_end_remove:
+            logger.warn(f"Removing {remove} from dataset.")
+            self._dataset.remove(remove)
+        self._on_epoch_end_remove = []
 
     def validate_list_dataset(self, dataset: list, skip_validation: bool = False) -> list:
         """ Validate a list dataset """
@@ -208,7 +215,9 @@ class DataProvider:
                 data, annotation = preprocessor(data, annotation)
             
             if data is None or annotation is None:
-                raise ValueError("Data or annotation is None.")
+                logger.warning("Data or annotation is None, marking for removal on epoch end.")
+                self._on_epoch_end_remove.append(batch_data)
+                return None, None
             
             if self._use_cache and batch_data[0] not in self._cache:
                 self._cache[batch_data[0]] = (copy.deepcopy(data), copy.deepcopy(annotation))
@@ -229,6 +238,10 @@ class DataProvider:
         for index, batch in enumerate(dataset_batch):
 
             data, annotation = self.process_data(batch)
+
+            if data is None or annotation is None:
+                logger.warning("Data or annotation is None, skipping.")
+                continue
 
             batch_data.append(data)
             batch_annotations.append(annotation)
