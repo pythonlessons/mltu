@@ -24,9 +24,9 @@ if __name__ == "__main__":
     import pandas as pd
     from tqdm import tqdm
 
-    model = ImageToWordModel(model_path="Models/08_/model.onnx")
+    model = ImageToWordModel(model_path="Models/08_handwriting_recognition_torch/202303142139/model.onnx")
 
-    df = pd.read_csv("Models/02_captcha_to_text/202212211205/val.csv").values.tolist()
+    df = pd.read_csv("Models/08_handwriting_recognition_torch/202303142139/val.csv").values.tolist()
 
     accum_cer = []
     for image_path, label in tqdm(df):

@@ -1,4 +1,5 @@
 import os
+import onnx
 import logging
 import numpy as np
 from datetime import datetime
@@ -320,8 +321,6 @@ class Model2onnx(Callback):
             self.logger.info(f"Model saved to {self.onnx_model_path}")
 
         if self.metadata and isinstance(self.metadata, dict):
-            import onnx
-
             # Load the ONNX model
             onnx_model = onnx.load(self.onnx_model_path)
 
