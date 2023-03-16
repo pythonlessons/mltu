@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.nn.init as init
 
 def activation_layer(activation: str='relu', alpha: float=0.1, inplace: bool=True):
     """ Activation layer wrapper for LeakyReLU and ReLU activation functions
@@ -37,7 +36,7 @@ class ResidualBlock(nn.Module):
         self.convb1 = ConvBlock(in_channels, out_channels, kernel_size=3, stride=stride, padding=1)
         self.act1 = activation_layer(activation)
 
-        self.convb2 = ConvBlock(in_channels, out_channels, kernel_size=3, stride=1, padding=1)
+        self.convb2 = ConvBlock(out_channels, out_channels, kernel_size=3, stride=1, padding=1)
 
         self.dropout = nn.Dropout(p=dropout)
         

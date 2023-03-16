@@ -103,6 +103,7 @@ class Model:
         loss = self.loss(output, target)
         loss.backward()
         self.optimizer.step()
+        torch.cuda.synchronize() # synchronize after each forward and backward pass
 
         self.metrics.update(target, output)
 
