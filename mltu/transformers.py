@@ -157,7 +157,7 @@ class ImageShowCV2(Transformer):
         """
         if self.verbose:
             if isinstance(label, (str, int, float)):
-                logger.info('Label: ', label)
+                logger.info(f'Label: {label}')
 
         cv2.imshow('image', data)
         cv2.waitKey(0)

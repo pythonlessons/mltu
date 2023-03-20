@@ -26,15 +26,9 @@ class CTCLoss(nn.Module):
         # Remove padding and blank tokens from target
         target_lengths = torch.sum(target != self.blank, dim=1)
         target_unpadded = target[target != self.blank].view(-1)
-        # target_unpadded = []
-        # for i in range(target.size(0)):
-        #     target_unpadded.append(target[i, :target_lengths[i]])
-        # target_unpadded = torch.cat(target_unpadded)
-
 
         output = output.permute(1, 0, 2)  # (sequence_length, batch_size, num_classes)
         output_lengths = torch.full(size=(output.size(1),), fill_value=output.size(0), dtype=torch.int64)
-        # target_lengths = torch.full(size=(output.size(1),), fill_value=target.size(1), dtype=torch.int64)
 
         loss = self.ctc_loss(output, target_unpadded, output_lengths, target_lengths)
 

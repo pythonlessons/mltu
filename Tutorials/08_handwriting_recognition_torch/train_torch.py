@@ -16,7 +16,7 @@ from mltu.torch.metrics import CERMetric, WERMetric
 from mltu.torch.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard, Model2onnx, ReduceLROnPlateau
 
 from mltu.preprocessors import ImageReader
-from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding
+from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding, ImageShowCV2
 from mltu.augmentors import RandomBrightness, RandomRotate, RandomErodeDilate, RandomSharpen
 
 from model import Network
@@ -80,12 +80,14 @@ data_provider = DataProvider(
     batch_size=configs.batch_size,
     data_preprocessors=[ImageReader()],
     transformers=[
+        # ImageShowCV2(), # uncomment to show images during training
         ImageResizer(configs.width, configs.height, keep_aspect_ratio=False),
         LabelIndexer(configs.vocab),
         LabelPadding(max_word_length=configs.max_text_length, padding_value=len(configs.vocab))
         ],
     use_cache=True,
 )
+
 # Split the dataset into training and validation sets
 train_dataProvider, test_dataProvider = data_provider.split(split = 0.9)
 
