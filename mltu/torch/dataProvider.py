@@ -22,6 +22,7 @@ class DataProvider(DataProvider):
             transformers: typing.List[Transformer] = None,
             skip_validation: bool = True,
             limit: int = None,
+            use_cache: bool = False,
             workers: int = os.cpu_count(),
             use_multiprocessing: bool = False,
         ):
@@ -37,12 +38,13 @@ class DataProvider(DataProvider):
             transformers (list, optional): List of transformer functions. Defaults to None.
             skip_validation (bool, optional): Whether to skip validation. Defaults to True.
             limit (int, optional): Limit the number of samples in the dataset. Defaults to None.
+            use_cache (bool, optional): Whether to cache the dataset. Defaults to False.
             workers (int, optional): Number of workers to use for multiprocessing or multithreading. Defaults to os.cpu_count().
             use_multiprocessing (bool, optional): Whether to use multiprocessing or multithreading. Defaults to multithreading (False).
         """
         super(DataProvider, self).__init__(dataset=dataset, data_preprocessors=data_preprocessors, batch_size=batch_size, 
                                            shuffle=shuffle, initial_epoch=initial_epoch, augmentors=augmentors, transformers=transformers, 
-                                           skip_validation=skip_validation, limit=limit)
+                                           skip_validation=skip_validation, limit=limit, use_cache=use_cache)
         self.workers = workers
         self.use_multiprocessing = use_multiprocessing
         self._executor = None
@@ -68,6 +70,11 @@ class DataProvider(DataProvider):
         if self._executor is None:
             self.start_executor()
 
-        batch_data, batch_annotations = zip(*self._executor.map(self.process_data, dataset_batch))
+        batch_data, batch_annotations = [], []
+        for data, annotation in self._executor.map(self.process_data, dataset_batch):
+            if data is None or annotation is None:
+                continue
+            batch_data.append(data)
+            batch_annotations.append(annotation)
 
         return np.array(batch_data), np.array(batch_annotations)

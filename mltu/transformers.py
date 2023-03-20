@@ -78,7 +78,7 @@ class ImageResizer(Transformer):
                 label = self.resize_maintaining_aspect_ratio(label, self._width, self._height, self._padding_color)
 
             return image, label
-
+        
         # Resizes without maintaining aspect ratio.
         return cv2.resize(data, (self._width, self._height)), label
 
@@ -157,7 +157,7 @@ class ImageShowCV2(Transformer):
         """
         if self.verbose:
             if isinstance(label, (str, int, float)):
-                logger.info('Label: ', label)
+                logger.info(f'Label: {label}')
 
         cv2.imshow('image', data)
         cv2.waitKey(0)

@@ -5,5 +5,5 @@ numpy
 opencv-python
 onnxruntime # onnxruntime-gpu for GPU support
 librosa==0.9.2
-importlib==1.0.4
 matplotlib
+onnx==1.12.0

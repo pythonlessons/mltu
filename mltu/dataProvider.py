@@ -25,6 +25,7 @@ class DataProvider:
         transformers: typing.List[Transformer] = None,
         skip_validation: bool = True,
         limit: int = None,
+        use_cache: bool = False,
         ) -> None:
         """ Standardised object for providing data to a model while training.
 
@@ -38,6 +39,7 @@ class DataProvider:
             transformers (list, optional): List of transformer functions. Defaults to None.
             skip_validation (bool, optional): Whether to skip validation. Defaults to True.
             limit (int, optional): Limit the number of samples in the dataset. Defaults to None.
+            use_cache (bool, optional): Whether to cache the dataset. Defaults to False.
         """
         self._dataset = self.validate(dataset, skip_validation, limit)
         self._data_preprocessors = data_preprocessors
@@ -48,7 +50,10 @@ class DataProvider:
         self._transformers = [] if transformers is None else transformers
         self._skip_validation = skip_validation
         self._limit = limit
+        self._use_cache = use_cache
         self._step = 0
+        self._cache = {}
+        self._on_epoch_end_remove = []
 
     def __len__(self):
         """ Denotes the number of batches per epoch """
@@ -109,6 +114,12 @@ class DataProvider:
         self._epoch += 1
         if self._shuffle:
             np.random.shuffle(self._dataset)
+
+        # Remove any samples that were marked for removal
+        for remove in self._on_epoch_end_remove:
+            logger.warn(f"Removing {remove} from dataset.")
+            self._dataset.remove(remove)
+        self._on_epoch_end_remove = []
 
     def validate_list_dataset(self, dataset: list, skip_validation: bool = False) -> list:
         """ Validate a list dataset """
@@ -196,12 +207,20 @@ class DataProvider:
 
     def process_data(self, batch_data):
         """ Process data batch of data """
-        data, annotation = batch_data
-        for preprocessor in self._data_preprocessors:
-            data, annotation = preprocessor(data, annotation)
-        
-        if data is None or annotation is None:
-            raise ValueError("Data or annotation is None.")
+        if self._use_cache and batch_data[0] in self._cache:
+            data, annotation = copy.deepcopy(self._cache[batch_data[0]])
+        else:
+            data, annotation = batch_data
+            for preprocessor in self._data_preprocessors:
+                data, annotation = preprocessor(data, annotation)
+            
+            if data is None or annotation is None:
+                logger.warning("Data or annotation is None, marking for removal on epoch end.")
+                self._on_epoch_end_remove.append(batch_data)
+                return None, None
+            
+            if self._use_cache and batch_data[0] not in self._cache:
+                self._cache[batch_data[0]] = (copy.deepcopy(data), copy.deepcopy(annotation))
 
         # Then augment, transform and postprocess the batch data
         for objects in [self._augmentors, self._transformers]:
@@ -219,6 +238,10 @@ class DataProvider:
         for index, batch in enumerate(dataset_batch):
 
             data, annotation = self.process_data(batch)
+
+            if data is None or annotation is None:
+                logger.warning("Data or annotation is None, skipping.")
+                continue
 
             batch_data.append(data)
             batch_annotations.append(annotation)

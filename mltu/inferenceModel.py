@@ -32,6 +32,12 @@ class OnnxInferenceModel:
 
         self.model = ort.InferenceSession(self.model_path, providers=providers)
 
+        self.metadata = self.model.get_modelmeta().custom_metadata_map
+        if self.metadata:
+            # add metadata to self object
+            for key, value in self.metadata.items():
+                setattr(self, key, value) 
+                
         # Update providers priority to only CPUExecutionProvider
         if self.force_cpu:
             self.model.set_providers(['CPUExecutionProvider'])

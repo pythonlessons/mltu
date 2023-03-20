@@ -1,6 +1,11 @@
 import os
+import onnx
 import logging
 import numpy as np
+from datetime import datetime
+
+import torch.onnx
+from torch.utils.tensorboard import SummaryWriter
 
 class Callback:
     """ Base class used to build new callbacks."""
@@ -67,7 +72,7 @@ class EarlyStopping(Callback):
         min_delta: float = 0.0, 
         patience: int = 0, 
         verbose: bool = False,
-        mode: str = "max_equal",
+        mode: str = "min",
         ):
         super(EarlyStopping, self).__init__()
 
@@ -118,6 +123,17 @@ class EarlyStopping(Callback):
         if self.stopped_epoch > 0 and self.verbose:
             self.logger.info(f"Epoch {self.stopped_epoch}: early stopping")
 
+def assign_mode(mode: str):
+    if mode not in ["min", "max", "max_equal", "min_equal"]:
+        raise ValueError(
+            "ModelCheckpoint mode %s is unknown, "
+            "please choose one of min, max, max_equal, min_equal" % mode
+        )
+
+    if mode == "min": return np.less
+    elif mode == "max": return np.greater
+    elif mode == "min_equal": return np.less_equal
+    elif mode == "max_equal": return np.greater_equal
 
 class ModelCheckpoint(Callback):
     """ ModelCheckpoint callback to save the model after every epoch or the best model across all epochs."""
@@ -147,16 +163,7 @@ class ModelCheckpoint(Callback):
         self.save_best_only = save_best_only
         self.best = None
 
-        if self.mode not in ["min", "max", "max_equal", "min_equal"]:
-            raise ValueError(
-                "ModelCheckpoint mode %s is unknown, "
-                "please choose one of min, max, max_equal, min_equal" % self.mode
-            )
-        
-        if self.mode == "min": self.monitor_op = np.less
-        elif self.mode == "max": self.monitor_op = np.greater
-        elif self.mode == "min_equal": self.monitor_op = np.less_equal
-        elif self.mode == "max_equal": self.monitor_op = np.greater_equal
+        self.monitor_op = assign_mode(self.mode)
         
     def on_train_begin(self, logs=None):
         self.best = np.inf if self.mode == "min" or self.mode == "min_equal" else -np.Inf
@@ -193,3 +200,194 @@ class ModelCheckpoint(Callback):
                 self.logger.info(f"Epoch {epoch}: {self.monitor} improved from {previous:.5f} to {best:.5f}, saving model to {self.filepath}")
 
         self.model.save(self.filepath)
+
+
+class TensorBoard(Callback):
+    """ TensorBoard basic visualizations. """
+    def __init__(self, log_dir: str = "logs", comment: str = None):
+        """ TensorBoard basic visualizations.
+        
+        Args:
+            log_dir (str, optional): the path of the directory where to save the log files to be parsed by TensorBoard. Defaults to "logs".
+            comment (str, optional): comment to append to the default log_dir. Defaults to None.
+        """
+        super(TensorBoard, self).__init__()
+
+        self.log_dir = log_dir
+
+        self.writer = None
+        self.comment = str(comment) if not None else datetime.now().strftime("%Y%m%d-%H%M%S")
+
+    def on_train_begin(self, logs=None):
+        if self.writer is None:
+            self.writer = SummaryWriter(self.log_dir, comment=self.comment)
+
+    def update_lr(self, epoch: int):
+        for param_group in self.model.optimizer.param_groups:
+            self.writer.add_scalar("learning_rate", param_group["lr"], epoch)
+
+    def update_histogram(self, epoch: int):
+        for name, param in self.model.model.named_parameters():
+            self.writer.add_histogram(name, param.clone().cpu().data.numpy(), epoch)
+
+    def parse_key(self, key: str):
+        if key.startswith("val_"):
+            return f"{key[4:].capitalize()}/test"
+        else:
+            return f"{key.capitalize()}/train"
+
+    def on_epoch_end(self, epoch: int, logs=None):
+        logs = logs or {}
+        for key, value in logs.items():
+            self.writer.add_scalar(self.parse_key(key), value, epoch)
+
+        self.update_lr(epoch)
+        self.update_histogram(epoch)
+
+    def on_train_end(self, logs=None):
+        self.writer.close()
+
+
+class Model2onnx(Callback):
+    """Converts the model from PyTorch to ONNX format after training."""
+    def __init__(
+        self, 
+        saved_model_path: str,
+        input_shape: tuple,
+        export_params: bool=True,
+        opset_version: int=14,
+        do_constant_folding: bool=True,
+        input_names: list=['input'],
+        output_names: list=['output'],
+        dynamic_axes: dict={'input' : {0 : 'batch_size'}, 
+                            'output' : {0 : 'batch_size'}},
+        verbose: bool=False,
+        metadata: dict=None,
+        ) -> None:
+        """ Converts the model from PyTorch to ONNX format after training.
+
+        Args:
+            saved_model_path (str): path to the saved model
+            input_shape (tuple): input shape of the model
+            export_params (bool, optional): if True, all model parameters will be exported. Defaults to True.
+            opset_version (int, optional): the ONNX version to export the model to. Defaults to 14.
+            do_constant_folding (bool, optional): whether to execute constant folding for optimization. Defaults to True.
+            input_names (list, optional): the model's input names. Defaults to ['input'].
+            output_names (list, optional): the model's output names. Defaults to ['output'].
+            dynamic_axes (dict, optional): dictionary specifying dynamic axes. Defaults to {'input' : {0 : 'batch_size'}, 'output' : {0 : 'batch_size'}}.
+            verbose (bool, optional): if True, information about the conversion will be printed. Defaults to False.
+            metadata (dict, optional): dictionary containing model metadata. Defaults to None.
+        """
+        super().__init__()
+        self.saved_model_path = saved_model_path
+        self.input_shape = input_shape
+        self.export_params = export_params
+        self.opset_version = opset_version
+        self.do_constant_folding = do_constant_folding
+        self.input_names = input_names
+        self.output_names = output_names
+        self.dynamic_axes = dynamic_axes
+        self.verbose = verbose
+        self.metadata = metadata
+        
+        self.onnx_model_path = saved_model_path.replace(".pt", ".onnx")
+
+    def on_train_end(self, logs=None):
+        self.model.model.load_state_dict(torch.load(self.saved_model_path))
+
+        # place model on cpu
+        self.model.model.to("cpu")
+
+        # set the model to inference mode
+        self.model.model.eval()
+        
+        # convert the model to ONNX format
+        dummy_input = torch.randn(self.input_shape)
+
+        # Export the model
+        torch.onnx.export(
+            self.model.model,               
+            dummy_input,                         
+            self.onnx_model_path,   
+            export_params=self.export_params,        
+            opset_version=self.opset_version,          
+            do_constant_folding=self.do_constant_folding,  
+            input_names = self.input_names,   
+            output_names = self.output_names, 
+            dynamic_axes = self.dynamic_axes,
+            )
+        
+        if self.verbose:
+            self.logger.info(f"Model saved to {self.onnx_model_path}")
+
+        if self.metadata and isinstance(self.metadata, dict):
+            # Load the ONNX model
+            onnx_model = onnx.load(self.onnx_model_path)
+
+            # Add the metadata dictionary to the model's metadata_props attribute
+            for key, value in self.metadata.items():
+                meta = onnx_model.metadata_props.add()
+                meta.key = key
+                meta.value = value
+
+            # Save the modified ONNX model
+            onnx.save(onnx_model, self.onnx_model_path)
+
+class ReduceLROnPlateau(Callback):
+    """ Reduce learning rate when a metric has stopped improving.
+    Models often benefit from reducing the learning rate by a factor of 2-10 once learning stagnates.
+    This callback monitors a quantity and if no improvement is seen for a 'patience' number of epochs,
+    the learning rate is reduced.
+    """
+    def __init__(
+        self, 
+        monitor: str = "val_loss", 
+        factor: float = 0.1, 
+        patience: int = 10, 
+        min_lr: float = 1e-6, 
+        mode: str = "min",
+        verbose: int = False,
+        ) -> None:
+        """ Reduce learning rate when a metric has stopped improving.
+        
+        Args:
+            monitor (str, optional): quantity to be monitored. Defaults to "val_loss".
+            factor (float, optional): factor by which the learning rate will be reduced. Defaults to 0.1.
+            patience (int, optional): number of epochs with no improvement after which learning rate will be reduced. Defaults to 10.
+            min_lr (float, optional): lower bound on the learning rate. Defaults to 1e-6.
+            verbose (int, optional): verbosity mode. Defaults to 0.
+            mode (str, optional): one of {min, max, max_equal, min_equal}. Defaults to "min". 
+        """
+        super(ReduceLROnPlateau, self).__init__()
+
+        self.monitor = monitor
+        self.factor = factor
+        self.patience = patience
+        self.min_lr = min_lr
+        self.verbose = verbose
+        self.mode = mode
+
+        self.monitor_op = assign_mode(self.mode)
+
+    def on_train_begin(self, logs=None):
+        self.wait = 0
+        self.best = np.inf if self.mode == "min" or self.mode == "min_equal" else -np.Inf
+
+    def on_epoch_end(self, epoch: int, logs=None):
+        current = self.get_monitor_value(logs)
+        if current is None:
+            return
+        
+        if self.monitor_op(current, self.best):
+            self.best = current
+            self.wait = 0
+
+        else:
+            self.wait += 1
+            if self.wait >= self.patience:
+                self.wait = 0
+                current_lr = self.model.optimizer.param_groups[0]["lr"]
+                new_lr = max(current_lr * self.factor, self.min_lr)
+                self.model.optimizer.param_groups[0]["lr"] = new_lr
+                if self.verbose:
+                    self.logger.info(f"Epoch {epoch}: reducing learning rate to {new_lr}.")

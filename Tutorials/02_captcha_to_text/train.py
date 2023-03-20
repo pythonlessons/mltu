@@ -34,10 +34,10 @@ dataset, vocab, max_len = [], set(), 0
 captcha_path = os.path.join('Datasets', 'captcha_images_v2')
 for file in os.listdir(captcha_path):
     file_path = os.path.join(captcha_path, file)
-    file_name = os.path.splitext(file)[0]
-    dataset.append([file_path, file_name])
-    vocab.update(list(file_name))
-    max_len = max(max_len, len(file_name))
+    label = os.path.splitext(file)[0] # Get the file name without the extension
+    dataset.append([file_path, label])
+    vocab.update(list(label))
+    max_len = max(max_len, len(label))
 
 configs = ModelConfigs()
 
