@@ -1,4 +1,12 @@
-## [1.0.2] - 2022-03-... (unreleased)
+## [1.0.3] - 2022-03-20
+### Changed
+- Changed `mltu.augmentors` to work only with `Image` objects
+
+### Added
+- Created `Image` object in `mltu.annotations.image` to handle image annotations
+
+
+## [1.0.2] - 2022-03-20
 ### Changed
 - changes `OnnxInferenceModel` in `mltu.torch.inferenceModels` to load custom metadata from saved ONNX model
 - improved `mltu.dataProvider` to remove bad samples from dataset on epoch end
@@ -21,7 +29,7 @@
 - added `mltu.torch.models`, used to create PyTorch models, that wrapps whole model pipeline (training, validation, metrics, callbacks, etc.)
 - added `mltu.torch.callbacks`, used to create PyTorch callbacks, that may be used in training and validation
 - added `mltu.torch.metrics`, used to create PyTorch metrics, that may be used in training and validation
-- added 07_pytorch_tutorial tutorial
+- added `07_pytorch_tutorial` tutorial
 
 
 ## [1.0.0] - 2022-03-06

@@ -80,7 +80,7 @@ data_provider = DataProvider(
     batch_size=configs.batch_size,
     data_preprocessors=[ImageReader()],
     transformers=[
-        # ImageShowCV2(), # uncomment to show images during training
+        # ImageShowCV2(), # uncomment to show images when iterating over the data provider
         ImageResizer(configs.width, configs.height, keep_aspect_ratio=False),
         LabelIndexer(configs.vocab),
         LabelPadding(max_word_length=configs.max_text_length, padding_value=len(configs.vocab))

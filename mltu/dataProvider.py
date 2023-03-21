@@ -10,8 +10,6 @@ from .transformers import Transformer
 
 import logging
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s')
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 class DataProvider:
     def __init__(
@@ -26,6 +24,7 @@ class DataProvider:
         skip_validation: bool = True,
         limit: int = None,
         use_cache: bool = False,
+        log_level: int = logging.INFO,
         ) -> None:
         """ Standardised object for providing data to a model while training.
 
@@ -40,8 +39,9 @@ class DataProvider:
             skip_validation (bool, optional): Whether to skip validation. Defaults to True.
             limit (int, optional): Limit the number of samples in the dataset. Defaults to None.
             use_cache (bool, optional): Whether to cache the dataset. Defaults to False.
+            log_level (int, optional): The log level. Defaults to logging.INFO.
         """
-        self._dataset = self.validate(dataset, skip_validation, limit)
+        self._dataset = dataset
         self._data_preprocessors = data_preprocessors
         self._batch_size = batch_size
         self._shuffle = shuffle
@@ -54,6 +54,19 @@ class DataProvider:
         self._step = 0
         self._cache = {}
         self._on_epoch_end_remove = []
+
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(log_level)
+
+        # Validate dataset
+        if not skip_validation:
+            self._dataset = self.validate(dataset, skip_validation, limit)
+        else:
+            self.logger.info("Skipping Dataset validation...")
+
+        if limit:
+            self.logger.info(f"Limiting dataset to {limit} samples.")
+            self._dataset = self._dataset[:limit]
 
     def __len__(self):
         """ Denotes the number of batches per epoch """
@@ -75,7 +88,7 @@ class DataProvider:
                     self._augmentors = [augmentor]
 
             else:
-                logger.warning(f"Augmentor {augmentor} is not an instance of Augmentor.")
+                self.logger.warning(f"Augmentor {augmentor} is not an instance of Augmentor.")
 
         return self._augmentors
 
@@ -95,7 +108,7 @@ class DataProvider:
                     self._transformers = [transformer]
 
             else:
-                logger.warning(f"Transformer {transformer} is not an instance of Transformer.")
+                self.logger.warning(f"Transformer {transformer} is not an instance of Transformer.")
 
         return self._transformers
 
@@ -117,28 +130,20 @@ class DataProvider:
 
         # Remove any samples that were marked for removal
         for remove in self._on_epoch_end_remove:
-            logger.warn(f"Removing {remove} from dataset.")
+            self.logger.warn(f"Removing {remove} from dataset.")
             self._dataset.remove(remove)
         self._on_epoch_end_remove = []
 
     def validate_list_dataset(self, dataset: list, skip_validation: bool = False) -> list:
         """ Validate a list dataset """
-        if skip_validation:
-            logger.info("Skipping Dataset validation...")
-            return dataset
-
         validated_data = [data for data in tqdm(dataset, desc="Validating Dataset") if os.path.exists(data[0])]
         if not validated_data:
             raise FileNotFoundError("No valid data found in dataset.")
 
         return validated_data
 
-    def validate(self, dataset: typing.Union[str, list, pd.DataFrame], skip_validation: bool, limit: int) -> list:
+    def validate(self, dataset: typing.Union[str, list, pd.DataFrame], skip_validation: bool) -> list:
         """ Validate the dataset and return the dataset """
-
-        if limit:
-            logger.info(f"Limiting dataset to {limit} samples.")
-            dataset = dataset[:limit]
 
         if isinstance(dataset, str):
             if os.path.exists(dataset):
@@ -215,7 +220,7 @@ class DataProvider:
                 data, annotation = preprocessor(data, annotation)
             
             if data is None or annotation is None:
-                logger.warning("Data or annotation is None, marking for removal on epoch end.")
+                self.logger.warning("Data or annotation is None, marking for removal on epoch end.")
                 self._on_epoch_end_remove.append(batch_data)
                 return None, None
             
@@ -226,6 +231,15 @@ class DataProvider:
         for objects in [self._augmentors, self._transformers]:
             for object in objects:
                 data, annotation = object(data, annotation)
+
+        # Convert to numpy array if not already
+        if not isinstance(data, np.ndarray):
+            data = data.numpy()
+
+        # Convert to numpy array if not already
+        # TODO: This is a hack, need to fix this
+        if not isinstance(annotation, (np.ndarray, int, float, str, np.uint8, np.float)):
+            annotation = annotation.numpy()
 
         return data, annotation
 
@@ -240,7 +254,7 @@ class DataProvider:
             data, annotation = self.process_data(batch)
 
             if data is None or annotation is None:
-                logger.warning("Data or annotation is None, skipping.")
+                self.logger.warning("Data or annotation is None, skipping.")
                 continue
 
             batch_data.append(data)
