@@ -2,17 +2,24 @@ import cv2
 import typing
 import numpy as np
 
+from . import Image
+
 import logging
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class Transformer:
-    def __init__(self, *args, **kwargs):
-        pass
 
-    def __call__(self, data: np.ndarray, label: np.ndarray, *args, **kwargs):
+class Transformer:
+    def __init__(self, log_level: int = logging.INFO) -> None:
+        self._log_level = log_level
+
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.INFO)
+
+    def __call__(self, data: typing.Any, label: typing.Any, *args, **kwargs):
         raise NotImplementedError
+
 
 class ExpandDims(Transformer):
     def __init__(self, axis: int=-1):
@@ -69,18 +76,23 @@ class ImageResizer(Transformer):
 
         return new_image
 
-    def __call__(self, data: np.ndarray, label: np.ndarray):
+    def __call__(self, image: Image, label: typing.Any) -> typing.Tuple[Image, typing.Any]:
         # Maintains aspect ratio and resizes with padding.
+        image_numpy = image.numpy()
         if self._keep_aspect_ratio:
-            image = self.resize_maintaining_aspect_ratio(data, self._width, self._height, self._padding_color)
+            image_numpy = self.resize_maintaining_aspect_ratio(image.numpy(), self._width, self._height, self._padding_color)
 
-            if isinstance(label, np.ndarray):
-                label = self.resize_maintaining_aspect_ratio(label, self._width, self._height, self._padding_color)
+            # TODO - Fix this
+            # if isinstance(label, np.ndarray):
+            #     label = self.resize_maintaining_aspect_ratio(label, self._width, self._height, self._padding_color)
 
-            return image, label
-        
-        # Resizes without maintaining aspect ratio.
-        return cv2.resize(data, (self._width, self._height)), label
+        else:   
+            # Resizes without maintaining aspect ratio.
+            image_numpy = cv2.resize(image_numpy, (self._width, self._height))
+
+        image.update(image_numpy)
+
+        return image, label
 
 class LabelIndexer(Transformer):
     """Convert label to index by vocab
@@ -137,14 +149,24 @@ class SpectrogramPadding(Transformer):
 
 class ImageShowCV2(Transformer):
     """Show image for visual inspection
-
-    Attributes:
-        verbose (bool): Whether to log label
     """
-    def __init__(self, verbose: bool=True) -> None:
+    def __init__(
+        self, 
+        verbose: bool=True, 
+        log_level: int = logging.INFO,
+        name: str = 'Image'
+        ) -> None:
+        """
+        Args:
+            verbose (bool): Whether to log label
+            log_level (int): Logging level (default: logging.INFO)
+            name (str): Name of window to show image
+        """
+        super(ImageShowCV2, self).__init__(log_level=log_level)
         self.verbose = verbose
+        self.name = name
 
-    def __call__(self, data: np.ndarray, label: np.ndarray):
+    def __call__(self, image: Image, label: typing.Any) -> typing.Tuple[Image, typing.Any]:
         """ Show image for visual inspection
 
         Args:
@@ -157,10 +179,10 @@ class ImageShowCV2(Transformer):
         """
         if self.verbose:
             if isinstance(label, (str, int, float)):
-                logger.info(f'Label: {label}')
+                self.logger.info(f'Label: {label}')
 
-        cv2.imshow('image', data)
+        cv2.imshow(self.name, image.numpy())
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-        return data, label
+        return image, label

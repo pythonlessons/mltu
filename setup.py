@@ -41,11 +41,11 @@ setup(
         'gpu': ['onnxruntime-gpu'],
     },
     python_requires='>=3',
-    packages = ['mltu', 'mltu.utils', 'mltu.torch', 'mltu.tensorflow'],
+    packages = ['mltu', 'mltu.utils', 'mltu.torch', 'mltu.tensorflow', 'mltu.annotations'],
     include_package_data=True,
     project_urls={
         'Source': 'https://github.com/pythonlessons/mltu/',
         'Tracker': 'https://github.com/pythonlessons/mltu/issues',
     },
-    description="Machine Learning Training Utilities (MLTU) for TenosrFlow",
+    description="Machine Learning Training Utilities (MLTU) for TenosrFlow and PyTorch",
 )

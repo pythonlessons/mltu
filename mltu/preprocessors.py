@@ -1,3 +1,4 @@
+import os
 import cv2
 import typing
 import librosa
@@ -7,13 +8,27 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.interactive(False)
 
+import logging
+logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s')
+
+from . import Image
+
 class ImageReader:
     """Read image with cv2 from path and return image and label"""
-    def __init__(self, method: int = cv2.IMREAD_COLOR, *args, **kwargs):
+    def __init__(self, method: int = cv2.IMREAD_COLOR, log_level: int = logging.INFO) -> None:
         self._method = method
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(log_level)
 
-    def __call__(self, image_path: str, label: str):
-        image = cv2.imread(image_path, self._method)
+    def __call__(self, image_path: str, label: typing.Any) -> typing.Tuple[Image, typing.Any]:
+        # check whether image_path exists
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Image {image_path} not found.")
+
+        image = Image(image = image_path, method = self._method)
+        if image.image is None:
+            image = None
+            self.logger.warning(f"Image {image_path} could not be read, returning None.")
 
         return image, label
 
