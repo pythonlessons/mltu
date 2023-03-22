@@ -24,7 +24,7 @@ class Model2onnx(Callback):
     def on_train_end(self, logs=None):
         self.model.load_weights(self.saved_model_path)
         self.onnx_model_path = self.saved_model_path.replace(".h5", ".onnx")
-        self.tf2onnx.convert.from_keras(self.model, output_path=self.onnx_model_path)
+        tf2onnx.convert.from_keras(self.model, output_path=self.onnx_model_path)
 
         if self.metadata and isinstance(self.metadata, dict):
             # Load the ONNX model
