@@ -20,10 +20,25 @@ class ImageReader:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(log_level)
 
-    def __call__(self, image_path: str, label: typing.Any) -> typing.Tuple[Image, typing.Any]:
-        # check whether image_path exists
-        if not os.path.exists(image_path):
-            raise FileNotFoundError(f"Image {image_path} not found.")
+    def __call__(self, image_path: typing.Union[str, np.ndarray], label: typing.Any) -> typing.Tuple[Image, typing.Any]:
+        """ Read image with cv2 from path and return image and label
+        
+        Args:
+            image_path (typing.Union[str, np.ndarray]): Path to image or numpy array
+            label (Any): Label of image
+
+        Returns:
+            Image: Image object
+            Any: Label of image
+        """
+        if isinstance(image_path, str):
+            # check whether image_path exists
+            if not os.path.exists(image_path):
+                raise FileNotFoundError(f"Image {image_path} not found.")
+        elif isinstance(image_path, np.ndarray):
+            pass
+        else:
+            raise TypeError(f"Image {image_path} is not a string or numpy array.")
 
         image = Image(image = image_path, method = self._method)
         if image.image is None:

@@ -1,26 +1,43 @@
 import os
+import tf2onnx
+import onnx
 from keras.callbacks import Callback
 
 import logging
 
 class Model2onnx(Callback):
-    """Converts the model to onnx format after training is finished.
-    
-    Args:
-        saved_model_path (str): Path to the saved .h5 model.
-    """
-    try:
-        import tf2onnx
-    except ImportError:
-        raise ImportError("tf2onnx not installed, skipping model export to onnx")
-
-    def __init__(self, saved_model_path: str) -> None:
+    """ Converts the model to onnx format after training is finished. """
+    def __init__(
+        self, 
+        saved_model_path: str, 
+        metadata: dict=None
+        ) -> None:
+        """ Converts the model to onnx format after training is finished.
+        Args:
+            saved_model_path (str): Path to the saved .h5 model.
+            metadata (dict, optional): Dictionary containing metadata to be added to the onnx model. Defaults to None.
+        """
         super().__init__()
         self.saved_model_path = saved_model_path
+        self.metadata = metadata
 
     def on_train_end(self, logs=None):
         self.model.load_weights(self.saved_model_path)
-        self.tf2onnx.convert.from_keras(self.model, output_path=self.saved_model_path.replace(".h5", ".onnx"), )
+        self.onnx_model_path = self.saved_model_path.replace(".h5", ".onnx")
+        self.tf2onnx.convert.from_keras(self.model, output_path=self.onnx_model_path)
+
+        if self.metadata and isinstance(self.metadata, dict):
+            # Load the ONNX model
+            onnx_model = onnx.load(self.onnx_model_path)
+
+            # Add the metadata dictionary to the model's metadata_props attribute
+            for key, value in self.metadata.items():
+                meta = onnx_model.metadata_props.add()
+                meta.key = key
+                meta.value = value
+
+            # Save the modified ONNX model
+            onnx.save(onnx_model, self.onnx_model_path)
 
 class TrainLogger(Callback):
     """Logs training metrics to a file.

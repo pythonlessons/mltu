@@ -1,3 +1,9 @@
+## [1.0.4] - 2022-03-22
+### Changed
+- Fix `ImageReader` to work either with image path or `np.ndarray`
+- Added `metadata` support to `callbacks/tf2onnx` when converting to onnx format
+
+
 ## [1.0.3] - 2022-03-20
 ### Changed
 - Changed `mltu.augmentors` to work only with `Image` objects

@@ -17,7 +17,7 @@ class Image:
         image: typing.Union[str, np.ndarray],
         method: int = cv2.IMREAD_COLOR,
         path: str = "",
-        color: str = ""
+        color: str = "BGR"
         ) -> None:
         
         if isinstance(image, str):
