@@ -10,6 +10,7 @@ from . import Image
 - RandomRotate
 - RandomErodeDilate
 - RandomSharpen
+- RandomGaussianBlur
 """
 
 def randomness_decorator(func):
@@ -92,7 +93,7 @@ class RandomBrightness(Augmentor):
 
         Returns:
             image (Image): Adjusted image
-            annotation (typing.Any): Adjusted annotation
+            annotation (typing.Any): Adjusted annotation if necessary
         """
         value = 1 + np.random.uniform(-self._delta, self._delta) / 255
 
@@ -202,10 +203,12 @@ class RandomErodeDilate(Augmentor):
         """ Randomly erode and dilate image
 
         Args:
-            image (np.ndarray): Image to be eroded and dilated
+            image (Image): Image to be eroded and dilated
+            annotation (typing.Any): Annotation to be adjusted
 
         Returns:
-            image (np.ndarray): Eroded and dilated image
+            image (Image): Eroded and dilated image
+            annotation (typing.Any): Adjusted annotation if necessary
         """
         kernel = np.ones(self._kernel_size, np.uint8)
 
@@ -217,6 +220,7 @@ class RandomErodeDilate(Augmentor):
         image.update(img)
 
         return image, annotation
+
 
 class RandomSharpen(Augmentor):
     """ Randomly sharpen image"""
@@ -255,12 +259,12 @@ class RandomSharpen(Augmentor):
         """ Randomly sharpen image
 
         Args:
-            image (np.ndarray): Image to be sharpened
-            annotation (typing.Any): Annotation to be sharpened
+            image (Image): Image to be sharpened
+            annotation (typing.Any): Annotation to be adjusted
 
         Returns:
-            image (np.ndarray): Sharpened image
-            annotation (typing.Any): Sharpened annotation
+            image (Image): Sharpened image
+            annotation (typing.Any): Adjusted annotation if necessary
         """
         lightness = np.random.uniform(*self._ligtness_range)
         alpha = np.random.uniform(*self._alpha_range)
@@ -277,5 +281,42 @@ class RandomSharpen(Augmentor):
 
         # Merge the sharpened channels back into the original image
         image.update(cv2.merge([r_sharp, g_sharp, b_sharp]))
+
+        return image, annotation
+    
+
+class RandomGaussianBlur(Augmentor):
+    """ Randomly erode and dilate image"""
+    def __init__(
+        self, 
+        random_chance: float = 0.5,
+        log_level: int = logging.INFO,
+        sigma: typing.Union[int, float] = 0.5,
+        ) -> None:
+        """ Randomly erode and dilate image
+        
+        Args:
+            random_chance (float): Float between 0.0 and 1.0 setting bounds for random probability. Defaults to 0.5.
+            log_level (int): Log level for the augmentor. Defaults to logging.INFO.
+            sigma (int, float): standard deviation of the Gaussian kernel
+        """
+        super(RandomGaussianBlur, self).__init__(random_chance, log_level)
+        self.sigma = sigma
+
+    @randomness_decorator
+    def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
+        """ Randomly blurs an image with a Gaussian filter
+
+        Args:
+            image (Image): Image to be blurred
+            annotation (typing.Any): Annotation to be blurred
+
+        Returns:
+            image (Image): Blurred image
+            annotation (typing.Any): Blurred annotation if necessary
+        """
+        img = cv2.GaussianBlur(image.numpy(), (0, 0), self.sigma)
+
+        image.update(img)
 
         return image, annotation

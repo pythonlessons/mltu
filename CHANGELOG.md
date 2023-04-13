@@ -1,8 +1,18 @@
+## [1.0.6] - 2022-04-13
+### Changed
+- Fixed bug in `mltu.dataProvider.DataProvider` object to work without `data_preprocessors` when feeding loaded data in memory
+
+### Added
+- Added `RandomGaussianBlur` augmentor into `mltu.augmentors`
+
+
 ## [1.0.4] - 2022-03-22
 ### Changed
 - Fix `ImageReader` to work either with image path or `np.ndarray`
 - Added `metadata` support to `callbacks/tf2onnx` when converting to onnx format
 
+### Added
+-
 
 ## [1.0.3] - 2022-03-20
 ### Changed

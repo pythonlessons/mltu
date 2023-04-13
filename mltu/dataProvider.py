@@ -42,7 +42,7 @@ class DataProvider:
             log_level (int, optional): The log level. Defaults to logging.INFO.
         """
         self._dataset = dataset
-        self._data_preprocessors = data_preprocessors
+        self._data_preprocessors = [] if data_preprocessors is None else data_preprocessors
         self._batch_size = batch_size
         self._shuffle = shuffle
         self._epoch = initial_epoch
