@@ -1,5 +1,6 @@
 import tensorflow as tf
 from keras import layers
+from keras import backend as K
 
 class SelfAttention(layers.Layer):
     """  A self-attention layer for convolutional neural networks.
@@ -88,3 +89,96 @@ class SelfAttention(layers.Layer):
         attention_output = self.gamma * attention_output + inputs
 
         return attention_output
+    
+    
+class SpectralNormalization(tf.keras.layers.Wrapper):
+    """Spectral Normalization Wrapper. !!! This is not working yet !!!"""
+    def __init__(self, layer, power_iterations=1, eps=1e-12, **kwargs):
+        super(SpectralNormalization, self).__init__(layer, **kwargs)
+
+        if power_iterations <= 0:
+            raise ValueError(
+                "`power_iterations` should be greater than zero, got "
+                "`power_iterations={}`".format(power_iterations)
+            )
+        self.power_iterations = power_iterations
+        self.eps = eps
+        if not isinstance(layer, tf.keras.layers.Layer):
+            raise ValueError(
+                'Please initialize `TimeDistributed` layer with a '
+                '`Layer` instance. You passed: {input}'.format(input=layer))
+
+    def build(self, input_shape):
+        if not self.layer.built:
+            self.layer.build(input_shape)
+
+        self.w = self.layer.kernel
+        self.w_shape = self.w.shape.as_list()
+
+        # self.v = self.add_weight(shape=(1, self.w_shape[0] * self.w_shape[1] * self.w_shape[2]),
+        #                          initializer=tf.initializers.TruncatedNormal(stddev=0.02),
+        #                          trainable=False,
+        #                          name='sn_v',
+        #                          dtype=tf.float32)
+
+        self.u = self.add_weight(shape=(1, self.w_shape[-1]),
+                                 initializer=tf.initializers.TruncatedNormal(stddev=0.02),
+                                 trainable=False,
+                                 name='sn_u',
+                                 dtype=tf.float32)
+
+        super(SpectralNormalization, self).build()
+
+    def l2normalize(self, v, eps=1e-12):
+        return v / (tf.reduce_sum(v ** 2) ** 0.5 + eps)
+    
+    def power_iteration(self, W, u, rounds=1):
+        _u = u
+
+        for _ in range(rounds):
+            # v_ = tf.matmul(_u, tf.transpose(W))
+            # v_hat = self.l2normalize(v_)
+            _v = self.l2normalize(K.dot(_u, K.transpose(W)), eps=self.eps)
+
+            # u_ = tf.matmul(v_hat, W)
+            # u_hat = self.l2normalize(u_)
+            _u = self.l2normalize(K.dot(_v, W), eps=self.eps)
+
+        return _u, _v
+
+    def call(self, inputs, training=None):
+        if training is None:
+            training = tf.keras.backend.learning_phase()
+
+        if training:
+            self.update_weights()
+            output = self.layer(inputs)
+            self.restore_weights()  # Restore weights because of this formula "W = W - alpha * W_SN`"
+            return output
+
+        return self.layer(inputs)
+    
+    def update_weights(self):
+        w_reshaped = tf.reshape(self.w, [-1, self.w_shape[-1]])
+        
+        # u_hat = self.u
+        # v_hat = self.v  # init v vector
+
+        u_hat, v_hat = self.power_iteration(w_reshaped, self.u, self.power_iterations)
+        # v_ = tf.matmul(u_hat, tf.transpose(w_reshaped))
+        # # v_hat = v_ / (tf.reduce_sum(v_**2)**0.5 + self.eps)
+        # v_hat = self.l2normalize(v_, self.eps)
+
+        # u_ = tf.matmul(v_hat, w_reshaped)
+        # # u_hat = u_ / (tf.reduce_sum(u_**2)**0.5 + self.eps)
+        # u_hat = self.l2normalize(u_, self.eps)
+
+        # sigma = tf.matmul(tf.matmul(v_hat, w_reshaped), tf.transpose(u_hat))
+        sigma=K.dot(K.dot(v_hat, w_reshaped), K.transpose(u_hat))
+        self.u.assign(u_hat)
+        # self.v.assign(v_hat)
+
+        self.layer.kernel.assign(self.w / sigma)
+
+    def restore_weights(self):
+        self.layer.kernel.assign(self.w)
