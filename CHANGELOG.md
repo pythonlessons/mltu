@@ -1,3 +1,8 @@
+## [1.0.8] - 2022-04-24
+### Added
+- Added `RandomSaltAndPepper` augmentor into `mltu.augmentors`
+
+
 ## [1.0.7] - 2022-04-14
 ### Added
 - Added `SelfAttention` layer into `mltu.tensorflow.layers` to use with Conv2D layers (need more testings).
