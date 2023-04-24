@@ -11,6 +11,7 @@ from . import Image
 - RandomErodeDilate
 - RandomSharpen
 - RandomGaussianBlur
+- RandomSaltAndPepper
 """
 
 def randomness_decorator(func):
@@ -316,6 +317,62 @@ class RandomGaussianBlur(Augmentor):
             annotation (typing.Any): Blurred annotation if necessary
         """
         img = cv2.GaussianBlur(image.numpy(), (0, 0), self.sigma)
+
+        image.update(img)
+
+        return image, annotation
+    
+
+class RandomSaltAndPepper(Augmentor):
+    """ Randomly add Salt and Pepper noise to image"""
+    def __init__(
+        self, 
+        random_chance: float = 0.5,
+        log_level: int = logging.INFO,
+        salt_vs_pepper: float = 0.5,
+        amount: float = 0.1,
+        ) -> None:
+        """ Randomly add Salt and Pepper noise to image
+        
+        Args:
+            random_chance (float): Float between 0.0 and 1.0 setting bounds for random probability. Defaults to 0.5.
+            log_level (int): Log level for the augmentor. Defaults to logging.INFO.
+            salt_vs_pepper (float): ratio of salt vs pepper. Defaults to 0.5.
+            amount (float): proportion of the image to be salted and peppered. Defaults to 0.1.
+        """
+        super(RandomSaltAndPepper, self).__init__(random_chance, log_level)
+        self.salt_vs_pepper = salt_vs_pepper
+        self.amount = amount
+        
+        assert 0 <= salt_vs_pepper <= 1.0, "salt_vs_pepper must be between 0.0 and 1.0"
+        assert 0 <= amount <= 1.0, "amount must be between 0.0 and 1.0"
+
+    @randomness_decorator
+    def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
+        """ Randomly add salt and pepper noise to an image
+
+        Args:
+            image (Image): Image to be noised
+            annotation (typing.Any): Annotation to be noised
+
+        Returns:
+            image (Image): Noised image
+            annotation (typing.Any): Noised annotation if necessary
+        """
+        img = image.numpy()
+        height, width, channels = img.shape
+
+        # Salt mode
+        num_salt = int(self.amount * height * width * self.salt_vs_pepper)
+        row_coords = np.random.randint(0, height, size=num_salt)
+        col_coords = np.random.randint(0, width, size=num_salt)
+        img[row_coords, col_coords, :] = [255, 255, channels]
+
+        # Pepper mode
+        num_pepper = int(self.amount * height * width * (1.0 - self.salt_vs_pepper))
+        row_coords = np.random.randint(0, height, size=num_pepper)
+        col_coords = np.random.randint(0, width, size=num_pepper)
+        img[row_coords, col_coords, :] = [0, 0, channels]
 
         image.update(img)
 
