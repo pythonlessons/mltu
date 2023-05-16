@@ -12,6 +12,7 @@ from mltu.tensorflow.metrics import CWERMetric
 from mltu.preprocessors import ImageReader
 from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding
 from mltu.augmentors import RandomBrightness, RandomRotate, RandomErodeDilate
+from mltu.annotations.images import CVImage
 
 from model import train_model
 from configs import ModelConfigs
@@ -51,7 +52,7 @@ data_provider = DataProvider(
     dataset=dataset,
     skip_validation=True,
     batch_size=configs.batch_size,
-    data_preprocessors=[ImageReader()],
+    data_preprocessors=[ImageReader(CVImage)],
     transformers=[
         ImageResizer(configs.width, configs.height),
         LabelIndexer(configs.vocab),

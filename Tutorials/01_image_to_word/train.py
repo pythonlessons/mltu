@@ -9,10 +9,12 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, T
 
 from mltu.dataProvider import DataProvider
 from mltu.preprocessors import ImageReader
+from mltu.annotations.images import CVImage
 from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding
 from mltu.tensorflow.losses import CTCloss
 from mltu.tensorflow.callbacks import Model2onnx, TrainLogger
 from mltu.tensorflow.metrics import CWERMetric
+
 
 from model import train_model
 from configs import ModelConfigs
@@ -49,7 +51,7 @@ train_data_provider = DataProvider(
     dataset=train_dataset,
     skip_validation=True,
     batch_size=configs.batch_size,
-    data_preprocessors=[ImageReader()],
+    data_preprocessors=[ImageReader(CVImage)],
     transformers=[
         ImageResizer(configs.width, configs.height),
         LabelIndexer(configs.vocab),
@@ -62,7 +64,7 @@ val_data_provider = DataProvider(
     dataset=val_dataset,
     skip_validation=True,
     batch_size=configs.batch_size,
-    data_preprocessors=[ImageReader()],
+    data_preprocessors=[ImageReader(CVImage)],
     transformers=[
         ImageResizer(configs.width, configs.height),
         LabelIndexer(configs.vocab),

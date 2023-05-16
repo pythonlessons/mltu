@@ -11,6 +11,7 @@ from .transformers import Transformer
 import logging
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 
+
 class DataProvider:
     def __init__(
         self, 
@@ -238,7 +239,7 @@ class DataProvider:
 
         # Convert to numpy array if not already
         # TODO: This is a hack, need to fix this
-        if not isinstance(annotation, (np.ndarray, int, float, str, np.uint8, np.float)):
+        if not isinstance(annotation, (np.ndarray, int, float, str, np.uint8, float)):
             annotation = annotation.numpy()
 
         return data, annotation

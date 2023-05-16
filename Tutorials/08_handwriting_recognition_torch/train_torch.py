@@ -18,6 +18,7 @@ from mltu.torch.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard, Mo
 from mltu.preprocessors import ImageReader
 from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding, ImageShowCV2
 from mltu.augmentors import RandomBrightness, RandomRotate, RandomErodeDilate, RandomSharpen
+from mltu.annotations.images import CVImage
 
 from model import Network
 from configs import ModelConfigs
@@ -78,7 +79,7 @@ data_provider = DataProvider(
     dataset=dataset,
     skip_validation=True,
     batch_size=configs.batch_size,
-    data_preprocessors=[ImageReader()],
+    data_preprocessors=[ImageReader(CVImage)],
     transformers=[
         # ImageShowCV2(), # uncomment to show images when iterating over the data provider
         ImageResizer(configs.width, configs.height, keep_aspect_ratio=False),

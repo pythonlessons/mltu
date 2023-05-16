@@ -39,6 +39,7 @@ class Model2onnx(Callback):
             # Save the modified ONNX model
             onnx.save(onnx_model, self.onnx_model_path)
 
+
 class TrainLogger(Callback):
     """Logs training metrics to a file.
     
@@ -47,7 +48,7 @@ class TrainLogger(Callback):
         log_file (str, optional): Name of the log file. Defaults to 'logs.log'.
         logLevel (int, optional): Logging level. Defaults to logging.INFO.
     """
-    def __init__(self, log_path: str, log_file: str='logs.log', logLevel=logging.INFO) -> None:
+    def __init__(self, log_path: str, log_file: str='logs.log', logLevel=logging.INFO, console_output=False) -> None:
         super().__init__()
         self.log_path = log_path
         self.log_file = log_file
@@ -63,6 +64,9 @@ class TrainLogger(Callback):
         self.file_handler = logging.FileHandler(os.path.join(self.log_path, self.log_file))
         self.file_handler.setLevel(logLevel)
         self.file_handler.setFormatter(self.formatter)
+
+        if not console_output:
+            self.logger.handlers[:] = []
 
         self.logger.addHandler(self.file_handler)
 

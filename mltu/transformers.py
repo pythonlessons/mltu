@@ -147,6 +147,7 @@ class SpectrogramPadding(Transformer):
 
         return padded_spectrogram, label
 
+
 class ImageShowCV2(Transformer):
     """Show image for visual inspection
     """

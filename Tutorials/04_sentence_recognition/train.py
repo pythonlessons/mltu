@@ -7,6 +7,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, T
 from mltu.preprocessors import ImageReader
 from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding, ImageShowCV2
 from mltu.augmentors import RandomBrightness, RandomRotate, RandomErodeDilate, RandomSharpen
+from mltu.annotations.images import CVImage
 
 from mltu.tensorflow.dataProvider import DataProvider
 from mltu.tensorflow.losses import CTCloss
@@ -63,7 +64,7 @@ data_provider = DataProvider(
     dataset=dataset,
     skip_validation=True,
     batch_size=configs.batch_size,
-    data_preprocessors=[ImageReader()],
+    data_preprocessors=[ImageReader(CVImage)],
     transformers=[
         ImageResizer(configs.width, configs.height, keep_aspect_ratio=True),
         LabelIndexer(configs.vocab),
