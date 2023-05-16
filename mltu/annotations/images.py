@@ -50,7 +50,7 @@ class Image(ABC):
 
 
 class CVImage(ABC):
-    """ Image class for storing image data and metadata
+    """ Image class for storing image data and metadata (opencv based)
 
     Args:
         image (str or np.ndarray): Path to image or numpy.ndarray
@@ -170,7 +170,7 @@ class CVImage(ABC):
 
 
 class PillowImage(Image):
-    """ Image class for storing animated gif image data and metadata
+    """ Image class for storing image data and metadata (pillow based)
 
     Args:
         image (str): Path to image
