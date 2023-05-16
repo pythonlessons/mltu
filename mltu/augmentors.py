@@ -14,6 +14,7 @@ from . import Image
 - RandomSaltAndPepper
 """
 
+
 def randomness_decorator(func):
     """ Decorator for randomness """
     def wrapper(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:

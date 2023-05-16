@@ -49,7 +49,7 @@ class Image(ABC):
         pass
 
 
-class CVImage(ABC):
+class CVImage(Image):
     """ Image class for storing image data and metadata (opencv based)
 
     Args:
