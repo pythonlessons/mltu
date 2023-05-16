@@ -189,23 +189,26 @@ class PillowImage(Image):
             self.path = image
             self._image = PilImage.open(image)
 
-            self._updated = False
             self.init_successful = True
         else:
             raise TypeError('Image must be a path to an image')
 
-        if not self._image.is_animated:
-            self._init_attributes()
-        else:
+        if self.is_animated:
             # initialize whatever attributes we can already determine at this stage, i.e. width & height.
             self.width = self._image.width
             self.height = self._image.height
             self.channels = None
+        else:
+            self._init_attributes()
+
+    @property
+    def is_animated(self) -> bool:
+        return (hasattr(self._image, 'is_animated') and self._image.is_animated)
 
     @property
     def image(self) -> np.ndarray:
-        if not self._updated:
-            raise Exception('need to update first')
+        if self.is_animated:
+            raise Exception('convert to single image first')
 
         return np.asarray(self._image)
 
@@ -241,20 +244,22 @@ class PillowImage(Image):
         self.color = self._image.mode
 
         # save width, height and channels
-        self.width = self._image.shape[1]
-        self.height = self._image.shape[0]
-        self.channels = 1 if len(self._image.shape) == 2 else self._image.shape[2]
-
-        self._updated = True
+        self.width = self.image.shape[1]
+        self.height = self.image.shape[0]
+        self.channels = 1 if len(self.image.shape) == 2 else self.image.shape[2]
 
     def update(self, image: PilImage.Image):
         if isinstance(image, PilImage.Image):
             self._image = image
+        elif isinstance(image, np.ndarray):
+            self._image = PilImage.fromarray(image)
+        else:
+            raise TypeError(f'image must be a Pillow Image or np.ndarray, not {type(image)}')
+
+        if not self.is_animated:
             self._init_attributes()
 
-            return self
-        else:
-            raise TypeError(f'image must be a Pillow Image, not {type(image)}')
+        return self
 
     def flip(self, axis: int = 0):
         """ Flip image along x or y axis
@@ -269,8 +274,8 @@ class PillowImage(Image):
         if axis not in [0, 1]:
             raise ValueError(f'axis must be either 0 or 1, not {axis}')
 
-        if not self._updated:
-            raise Exception('need to update first')
+        if self.is_animated:
+            raise Exception('convert to single image first')
 
         if axis == 0:
             self._image = PilImage.fromarray(np.asarray(self._image)[:, ::-1])
