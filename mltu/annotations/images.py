@@ -144,7 +144,6 @@ class CVImage(ABC):
         else:
             raise TypeError(f"image must be numpy.ndarray, not {type(image)}")
 
-
     def flip(self, axis: int = 0):
         """ Flip image along x or y axis
 
@@ -203,7 +202,7 @@ class PillowImage(Image):
 
     @property
     def is_animated(self) -> bool:
-        return (hasattr(self._image, 'is_animated') and self._image.is_animated)
+        return hasattr(self._image, 'is_animated') and self._image.is_animated
 
     @property
     def image(self) -> np.ndarray:
