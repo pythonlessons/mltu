@@ -197,7 +197,7 @@ class PillowImage(Image):
         if not self._image.is_animated:
             self._init_attributes()
         else:
-            # initialize whatever attributes we can already determinte at this stage, i.e. width & height.
+            # initialize whatever attributes we can already determine at this stage, i.e. width & height.
             self.width = self._image.width
             self.height = self._image.height
             self.channels = None
