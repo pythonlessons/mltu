@@ -18,14 +18,16 @@ from mltu.torch.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard, Mo
 from mltu.preprocessors import ImageReader
 from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding, ImageShowCV2
 from mltu.augmentors import RandomBrightness, RandomRotate, RandomErodeDilate, RandomSharpen
+from mltu.annotations.images import CVImage
 
 from model import Network
 from configs import ModelConfigs
 
-def download_and_unzip(url, extract_to='Datasets', chunk_size=1024*1024):
+
+def download_and_unzip(url, extract_to="Datasets", chunk_size=1024*1024):
     http_response = urlopen(url)
 
-    data = b''
+    data = b""
     iterations = http_response.length // chunk_size + 1
     for _ in tqdm(range(iterations)):
         data += http_response.read(chunk_size)
@@ -33,9 +35,9 @@ def download_and_unzip(url, extract_to='Datasets', chunk_size=1024*1024):
     zipfile = ZipFile(BytesIO(data))
     zipfile.extractall(path=extract_to)
 
-dataset_path = os.path.join('Datasets', 'IAM_Words')
+dataset_path = os.path.join("Datasets", "IAM_Words")
 if not os.path.exists(dataset_path):
-    download_and_unzip('https://git.io/J0fjL', extract_to='Datasets')
+    download_and_unzip("https://git.io/J0fjL", extract_to="Datasets")
 
     file = tarfile.open(os.path.join(dataset_path, "words.tgz"))
     file.extractall(os.path.join(dataset_path, "words"))
@@ -55,7 +57,7 @@ for line in tqdm(words):
     folder1 = line_split[0][:3]
     folder2 = "-".join(line_split[0].split("-")[:2])
     file_name = line_split[0] + ".png"
-    label = line_split[-1].rstrip('\n')
+    label = line_split[-1].rstrip("\n")
 
     rel_path = os.path.join(dataset_path, "words", folder1, folder2, file_name)
     if not os.path.exists(rel_path):
@@ -78,7 +80,7 @@ data_provider = DataProvider(
     dataset=dataset,
     skip_validation=True,
     batch_size=configs.batch_size,
-    data_preprocessors=[ImageReader()],
+    data_preprocessors=[ImageReader(CVImage)],
     transformers=[
         # ImageShowCV2(), # uncomment to show images when iterating over the data provider
         ImageResizer(configs.width, configs.height, keep_aspect_ratio=False),
@@ -99,7 +101,7 @@ train_dataProvider.augmentors = [
     RandomRotate(angle=10), 
     ]
 
-network = Network(len(configs.vocab), activation='leaky_relu', dropout=0.3)
+network = Network(len(configs.vocab), activation="leaky_relu", dropout=0.3)
 loss = CTCLoss(blank=len(configs.vocab))
 optimizer = optim.Adam(network.parameters(), lr=configs.learning_rate)
 
@@ -111,12 +113,12 @@ if torch.cuda.is_available():
     network = network.cuda()
 
 # create callbacks
-earlyStopping = EarlyStopping(monitor='val_CER', patience=20, mode="min", verbose=1)
-modelCheckpoint = ModelCheckpoint(configs.model_path + '/model.pt', monitor='val_CER', mode="min", save_best_only=True, verbose=1)
-tb_callback = TensorBoard(configs.model_path + '/logs')
-reduce_lr = ReduceLROnPlateau(monitor='val_CER', factor=0.9, patience=10, verbose=1, mode='min', min_lr=1e-6)
+earlyStopping = EarlyStopping(monitor="val_CER", patience=20, mode="min", verbose=1)
+modelCheckpoint = ModelCheckpoint(configs.model_path + "/model.pt", monitor="val_CER", mode="min", save_best_only=True, verbose=1)
+tb_callback = TensorBoard(configs.model_path + "/logs")
+reduce_lr = ReduceLROnPlateau(monitor="val_CER", factor=0.9, patience=10, verbose=1, mode="min", min_lr=1e-6)
 model2onnx = Model2onnx(
-    saved_model_path=configs.model_path + '/model.pt', 
+    saved_model_path=configs.model_path + "/model.pt",
     input_shape=(1, configs.height, configs.width, 3), 
     verbose=1,
     metadata={"vocab": configs.vocab}
@@ -132,5 +134,5 @@ model.fit(
     )
 
 # Save training and validation datasets as csv files
-train_dataProvider.to_csv(os.path.join(configs.model_path, 'train.csv'))
-test_dataProvider.to_csv(os.path.join(configs.model_path, 'val.csv'))
+train_dataProvider.to_csv(os.path.join(configs.model_path, "train.csv"))
+test_dataProvider.to_csv(os.path.join(configs.model_path, "val.csv"))

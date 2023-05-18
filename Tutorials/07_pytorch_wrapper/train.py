@@ -13,12 +13,13 @@ from mltu.torch.metrics import Accuracy
 from mltu.torch.callbacks import EarlyStopping, ModelCheckpoint
 
 # define path to store dataset
-path='Datasets/data'
+path = "Datasets/data"
+
 def fetch(url):
     if os.path.exists(path) is False:
         os.makedirs(path)
 
-    fp = os.path.join(path, hashlib.md5(url.encode('utf-8')).hexdigest())
+    fp = os.path.join(path, hashlib.md5(url.encode("utf-8")).hexdigest())
     if os.path.isfile(fp):
         with open(fp, "rb") as f:
             data = f.read()
@@ -65,14 +66,14 @@ if torch.cuda.is_available():
 
 # create callbacks
 earlyStopping = EarlyStopping(
-    monitor='val_accuracy', 
+    monitor="val_accuracy",
     patience=3, 
     mode="max", 
     verbose=1
     )
 modelCheckpoint = ModelCheckpoint(
-    'Models/07_pytorch_wrapper/model.pt', 
-    monitor='val_accuracy', 
+    "Models/07_pytorch_wrapper/model.pt",
+    monitor="val_accuracy",
     mode="max", 
     save_best_only=True, 
     verbose=1

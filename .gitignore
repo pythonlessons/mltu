@@ -8,3 +8,6 @@ Models/*
 dist
 
 !*.md
+
+.idea
+.python-version

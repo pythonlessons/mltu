@@ -1,5 +1,5 @@
 import tensorflow as tf
-try: [tf.config.experimental.set_memory_growth(gpu, True) for gpu in tf.config.experimental.list_physical_devices('GPU')]
+try: [tf.config.experimental.set_memory_growth(gpu, True) for gpu in tf.config.experimental.list_physical_devices("GPU")]
 except: pass
 
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TensorBoard
@@ -7,6 +7,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, T
 from mltu.preprocessors import ImageReader
 from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding, ImageShowCV2
 from mltu.augmentors import RandomBrightness, RandomRotate, RandomErodeDilate, RandomSharpen
+from mltu.annotations.images import CVImage
 
 from mltu.tensorflow.dataProvider import DataProvider
 from mltu.tensorflow.losses import CTCloss
@@ -23,10 +24,11 @@ from urllib.request import urlopen
 from io import BytesIO
 from zipfile import ZipFile
 
-def download_and_unzip(url, extract_to='Datasets', chunk_size=1024*1024):
+
+def download_and_unzip(url, extract_to="Datasets", chunk_size=1024*1024):
     http_response = urlopen(url)
 
-    data = b''
+    data = b""
     iterations = http_response.length // chunk_size + 1
     for _ in tqdm(range(iterations)):
         data += http_response.read(chunk_size)
@@ -34,9 +36,9 @@ def download_and_unzip(url, extract_to='Datasets', chunk_size=1024*1024):
     zipfile = ZipFile(BytesIO(data))
     zipfile.extractall(path=extract_to)
 
-dataset_path = os.path.join('Datasets', 'IAM_Words')
+dataset_path = os.path.join("Datasets", "IAM_Words")
 if not os.path.exists(dataset_path):
-    download_and_unzip('https://git.io/J0fjL', extract_to='Datasets')
+    download_and_unzip("https://git.io/J0fjL", extract_to="Datasets")
 
     file = tarfile.open(os.path.join(dataset_path, "words.tgz"))
     file.extractall(os.path.join(dataset_path, "words"))
@@ -56,7 +58,7 @@ for line in tqdm(words):
     folder1 = line_split[0][:3]
     folder2 = "-".join(line_split[0].split("-")[:2])
     file_name = line_split[0] + ".png"
-    label = line_split[-1].rstrip('\n')
+    label = line_split[-1].rstrip("\n")
 
     rel_path = os.path.join(dataset_path, "words", folder1, folder2, file_name)
     if not os.path.exists(rel_path):
@@ -80,7 +82,7 @@ data_provider = DataProvider(
     dataset=dataset,
     skip_validation=True,
     batch_size=configs.batch_size,
-    data_preprocessors=[ImageReader()],
+    data_preprocessors=[ImageReader(CVImage)],
     transformers=[
         ImageResizer(configs.width, configs.height, keep_aspect_ratio=False),
         LabelIndexer(configs.vocab),
@@ -114,11 +116,11 @@ model.compile(
 model.summary(line_length=110)
 
 # Define callbacks
-earlystopper = EarlyStopping(monitor='val_CER', patience=20, verbose=1)
-checkpoint = ModelCheckpoint(f"{configs.model_path}/model.h5", monitor='val_CER', verbose=1, save_best_only=True, mode='min')
+earlystopper = EarlyStopping(monitor="val_CER", patience=20, verbose=1)
+checkpoint = ModelCheckpoint(f"{configs.model_path}/model.h5", monitor="val_CER", verbose=1, save_best_only=True, mode="min")
 trainLogger = TrainLogger(configs.model_path)
-tb_callback = TensorBoard(f'{configs.model_path}/logs', update_freq=1)
-reduceLROnPlat = ReduceLROnPlateau(monitor='val_CER', factor=0.9, min_delta=1e-10, patience=10, verbose=1, mode='auto')
+tb_callback = TensorBoard(f"{configs.model_path}/logs", update_freq=1)
+reduceLROnPlat = ReduceLROnPlateau(monitor="val_CER", factor=0.9, min_delta=1e-10, patience=10, verbose=1, mode="auto")
 model2onnx = Model2onnx(f"{configs.model_path}/model.h5")
 
 # Train the model
@@ -131,5 +133,5 @@ model.fit(
 )
 
 # Save training and validation datasets as csv files
-train_data_provider.to_csv(os.path.join(configs.model_path, 'train.csv'))
-val_data_provider.to_csv(os.path.join(configs.model_path, 'val.csv'))
+train_data_provider.to_csv(os.path.join(configs.model_path, "train.csv"))
+val_data_provider.to_csv(os.path.join(configs.model_path, "val.csv"))

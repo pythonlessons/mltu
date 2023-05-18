@@ -1,8 +1,9 @@
 import tensorflow as tf
 
+
 class CTCloss(tf.keras.losses.Loss):
     """ CTCLoss objec for training the model"""
-    def __init__(self, name: str = 'CTCloss') -> None:
+    def __init__(self, name: str = "CTCloss") -> None:
         super(CTCloss, self).__init__()
         self.name = name
         self.loss_fn = tf.keras.backend.ctc_batch_cost

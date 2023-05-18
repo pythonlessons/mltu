@@ -19,8 +19,8 @@ class TestMetrics(unittest.TestCase):
         return embeddings, max_len
 
     def setUp(self) -> None:
-        true_words = ['Who are you', 'I am a student', 'I am a teacher', 'Just different sentence length']
-        pred_words = ['Who are you', 'I am a ztudent', 'I am A reacher', 'Just different length']
+        true_words = ["Who are you", "I am a student", "I am a teacher", "Just different sentence length"]
+        pred_words = ["Who are you", "I am a ztudent", "I am A reacher", "Just different length"]
 
         vocab = set()
         for sen in true_words + pred_words:
@@ -34,8 +34,8 @@ class TestMetrics(unittest.TestCase):
         max_len = max(max_len_true, max_len_pred)
         padding_length = 64
 
-        self.sen_true = [np.pad(sen, (0, max_len - len(sen)), 'constant', constant_values=len(self.vocab)) for sen in sentence_true]
-        self.sen_pred = [np.pad(sen, (0, padding_length - len(sen)), 'constant', constant_values=-1) for sen in sentence_pred]
+        self.sen_true = [np.pad(sen, (0, max_len - len(sen)), "constant", constant_values=len(self.vocab)) for sen in sentence_true]
+        self.sen_pred = [np.pad(sen, (0, padding_length - len(sen)), "constant", constant_values=-1) for sen in sentence_pred]
 
     def test_CERMetric(self):
         vocabulary = tf.constant(list(self.vocab))

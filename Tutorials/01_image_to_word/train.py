@@ -2,17 +2,19 @@ import os
 from tqdm import tqdm
 import tensorflow as tf
 
-try: [tf.config.experimental.set_memory_growth(gpu, True) for gpu in tf.config.experimental.list_physical_devices('GPU')]
+try: [tf.config.experimental.set_memory_growth(gpu, True) for gpu in tf.config.experimental.list_physical_devices("GPU")]
 except: pass
 
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TensorBoard
 
 from mltu.dataProvider import DataProvider
 from mltu.preprocessors import ImageReader
+from mltu.annotations.images import CVImage
 from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding
 from mltu.tensorflow.losses import CTCloss
 from mltu.tensorflow.callbacks import Model2onnx, TrainLogger
 from mltu.tensorflow.metrics import CWERMetric
+
 
 from model import train_model
 from configs import ModelConfigs
@@ -49,7 +51,7 @@ train_data_provider = DataProvider(
     dataset=train_dataset,
     skip_validation=True,
     batch_size=configs.batch_size,
-    data_preprocessors=[ImageReader()],
+    data_preprocessors=[ImageReader(CVImage)],
     transformers=[
         ImageResizer(configs.width, configs.height),
         LabelIndexer(configs.vocab),
@@ -62,7 +64,7 @@ val_data_provider = DataProvider(
     dataset=val_dataset,
     skip_validation=True,
     batch_size=configs.batch_size,
-    data_preprocessors=[ImageReader()],
+    data_preprocessors=[ImageReader(CVImage)],
     transformers=[
         ImageResizer(configs.width, configs.height),
         LabelIndexer(configs.vocab),
@@ -87,11 +89,11 @@ model.summary(line_length=110)
 os.makedirs(configs.model_path, exist_ok=True)
 
 # Define callbacks
-earlystopper = EarlyStopping(monitor='val_CER', patience=10, verbose=1)
-checkpoint = ModelCheckpoint(f"{configs.model_path}/model.h5", monitor='val_CER', verbose=1, save_best_only=True, mode='min')
+earlystopper = EarlyStopping(monitor="val_CER", patience=10, verbose=1)
+checkpoint = ModelCheckpoint(f"{configs.model_path}/model.h5", monitor="val_CER", verbose=1, save_best_only=True, mode="min")
 trainLogger = TrainLogger(configs.model_path)
-tb_callback = TensorBoard(f'{configs.model_path}/logs', update_freq=1)
-reduceLROnPlat = ReduceLROnPlateau(monitor='val_CER', factor=0.9, min_delta=1e-10, patience=5, verbose=1, mode='auto')
+tb_callback = TensorBoard(f"{configs.model_path}/logs", update_freq=1)
+reduceLROnPlat = ReduceLROnPlateau(monitor="val_CER", factor=0.9, min_delta=1e-10, patience=5, verbose=1, mode="auto")
 model2onnx = Model2onnx(f"{configs.model_path}/model.h5")
 
 # Train the model
@@ -104,5 +106,5 @@ model.fit(
 )
 
 # Save training and validation datasets as csv files
-train_data_provider.to_csv(os.path.join(configs.model_path, 'train.csv'))
-val_data_provider.to_csv(os.path.join(configs.model_path, 'val.csv'))
+train_data_provider.to_csv(os.path.join(configs.model_path, "train.csv"))
+val_data_provider.to_csv(os.path.join(configs.model_path, "val.csv"))

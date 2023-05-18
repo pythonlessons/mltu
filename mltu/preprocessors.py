@@ -1,27 +1,27 @@
 import os
-import cv2
 import typing
 import librosa
 import librosa.display
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.interactive(False)
-
 import logging
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 
 from . import Image
 
+logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+matplotlib.interactive(False)
+
+
 class ImageReader:
-    """Read image with cv2 from path and return image and label"""
-    def __init__(self, method: int = cv2.IMREAD_COLOR, log_level: int = logging.INFO) -> None:
-        self._method = method
+    """Read image from path and return image and label"""
+    def __init__(self, image_class, log_level: int = logging.INFO, ) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(log_level)
+        self._image_class = image_class
 
     def __call__(self, image_path: typing.Union[str, np.ndarray], label: typing.Any) -> typing.Tuple[Image, typing.Any]:
-        """ Read image with cv2 from path and return image and label
+        """ Read image from path and return image and label
         
         Args:
             image_path (typing.Union[str, np.ndarray]): Path to image or numpy array
@@ -32,7 +32,6 @@ class ImageReader:
             Any: Label of image
         """
         if isinstance(image_path, str):
-            # check whether image_path exists
             if not os.path.exists(image_path):
                 raise FileNotFoundError(f"Image {image_path} not found.")
         elif isinstance(image_path, np.ndarray):
@@ -40,12 +39,14 @@ class ImageReader:
         else:
             raise TypeError(f"Image {image_path} is not a string or numpy array.")
 
-        image = Image(image = image_path, method = self._method)
-        if image.image is None:
+        image = self._image_class(image=image_path)
+
+        if not image.init_successful:
             image = None
             self.logger.warning(f"Image {image_path} could not be read, returning None.")
 
         return image, label
+
 
 class WavReader:
     """Read wav file with librosa and return audio and label
@@ -57,9 +58,9 @@ class WavReader:
     """
     def __init__(
         self, 
-        frame_length: int=256, 
-        frame_step: int=160,
-        fft_length: int=384,
+        frame_length: int = 256,
+        frame_step: int = 160,
+        fft_length: int = 384,
         *args, **kwargs
         ) -> None:
         self.frame_length = frame_length
@@ -100,12 +101,13 @@ class WavReader:
         return spectrogram
 
     @staticmethod
-    def plot_raw_audio(wav_path: str, title:str = None, sr: int = 16000) -> None:
+    def plot_raw_audio(wav_path: str, title: str = None, sr: int = 16000) -> None:
         """Plot the raw audio of a WAV file
 
         Args:
             wav_path (str): Path to the WAV file.
             sr (int, optional): Sample rate of the WAV file. Defaults to 16000.
+            title (str, optional): Title
         """
         # Load the wav file and store the audio data in the variable 'audio' and the sample rate in 'orig_sr'
         audio, orig_sr = librosa.load(wav_path, sr=sr)
@@ -116,9 +118,9 @@ class WavReader:
 
         plt.figure(figsize=(15, 5))
         plt.plot(time, audio)
-        plt.title(title) if title else plt.title('Audio Plot')
-        plt.ylabel('signal wave')
-        plt.xlabel('time (s)')
+        plt.title(title) if title else plt.title("Audio Plot")
+        plt.ylabel("signal wave")
+        plt.xlabel("time (s)")
         plt.tight_layout()
         plt.show()
 
@@ -139,10 +141,10 @@ class WavReader:
             spectrogram = spectrogram[::-1]
 
         plt.figure(figsize=(15, 5))
-        plt.imshow(spectrogram, aspect='auto', origin='lower')
-        plt.title(f'Spectrogram: {title}')
-        plt.xlabel('Time')
-        plt.ylabel('Frequency')
+        plt.imshow(spectrogram, aspect="auto", origin="lower")
+        plt.title(f"Spectrogram: {title}")
+        plt.xlabel("Time")
+        plt.ylabel("Frequency")
         plt.colorbar()
         plt.tight_layout()
         plt.show()
@@ -159,3 +161,49 @@ class WavReader:
             Tuple[np.ndarray, typing.Any]: Spectrogram of the WAV file and its label.
         """
         return self.get_spectrogram(audio_path, self.frame_length, self.frame_step, self.fft_length), label
+
+
+class ImageCropper:
+    """Crop image to (width, height)
+
+    Attributes:
+        width (int): Width of image
+        height (int): Height of image
+        wifth_offset (int): Offset for width
+        height_offset (int): Offset for height
+    """
+    def __init__(
+            self,
+            width: int,
+            height: int,
+            width_offset: int = 0,
+            height_offset: int = 0,
+            log_level: int = logging.INFO
+    ) -> None:
+        super().__init__()
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(log_level)
+
+        self._width = width
+        self._height = height
+        self._width_offset = width_offset
+        self._height_offset = height_offset
+
+    def __call__(self, image: Image, label: typing.Any) -> typing.Tuple[Image, typing.Any]:
+        image_numpy = image.numpy()
+
+        source_width, source_height = image_numpy.shape[:2][::-1]
+
+        if source_width >= self._width:
+            image_numpy = image_numpy[:, self._width_offset:self._width + self._width_offset]
+        else:
+            raise Exception("unexpected")
+
+        if source_height >= self._height:
+            image_numpy = image_numpy[self._height_offset:self._height + self._height_offset, :]
+        else:
+            raise Exception("unexpected")
+
+        image.update(image_numpy)
+
+        return image, label

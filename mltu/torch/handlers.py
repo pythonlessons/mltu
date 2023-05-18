@@ -12,10 +12,10 @@ class MetricsHandler:
         if not all(isinstance(m, Metric) for m in self.metrics):
             raise TypeError("all items in the metrics argument must be of type Metric (Check mltu.metrics.metrics.py for more information)")
         
-        self.train_results_dict = {'loss': None}
+        self.train_results_dict = {"loss": None}
         self.train_results_dict.update({metric.name: None for metric in self.metrics})
         
-        self.val_results_dict = {'val_loss': None}
+        self.val_results_dict = {"val_loss": None}
         self.val_results_dict.update({"val_" + metric.name: None for metric in self.metrics})
 
     def update(self, target, output):
@@ -28,12 +28,12 @@ class MetricsHandler:
 
     def results(self, loss, train: bool=True):
         if train:
-            self.train_results_dict['loss'] = loss
+            self.train_results_dict["loss"] = loss
             for metric in self.metrics:
                 self.train_results_dict[metric.name] = metric.result()
             return self.train_results_dict
         
-        self.val_results_dict['val_loss'] = loss
+        self.val_results_dict["val_loss"] = loss
         for metric in self.metrics:
             self.val_results_dict["val_" + metric.name] = metric.result()  
         return self.val_results_dict

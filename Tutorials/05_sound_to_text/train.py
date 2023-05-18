@@ -1,5 +1,5 @@
 import tensorflow as tf
-try: [tf.config.experimental.set_memory_growth(gpu, True) for gpu in tf.config.experimental.list_physical_devices('GPU')]
+try: [tf.config.experimental.set_memory_growth(gpu, True) for gpu in tf.config.experimental.list_physical_devices("GPU")]
 except: pass
 
 import os
@@ -21,21 +21,23 @@ from mltu.tensorflow.metrics import CERMetric, WERMetric
 from model import train_model
 from configs import ModelConfigs
 
-def download_and_unzip(url, extract_to='Datasets', chunk_size=1024*1024):
+
+def download_and_unzip(url, extract_to="Datasets", chunk_size=1024*1024):
     http_response = urlopen(url)
 
-    data = b''
+    data = b""
     iterations = http_response.length // chunk_size + 1
     for _ in tqdm(range(iterations)):
         data += http_response.read(chunk_size)
 
-    tarFile = tarfile.open(fileobj=BytesIO(data), mode='r|bz2')
+    tarFile = tarfile.open(fileobj=BytesIO(data), mode="r|bz2")
     tarFile.extractall(path=extract_to)
     tarFile.close()
 
-dataset_path = os.path.join('Datasets', 'LJSpeech-1.1')
+
+dataset_path = os.path.join("Datasets", "LJSpeech-1.1")
 if not os.path.exists(dataset_path):
-    download_and_unzip('https://data.keithito.com/data/speech/LJSpeech-1.1.tar.bz2', extract_to='Datasets')
+    download_and_unzip("https://data.keithito.com/data/speech/LJSpeech-1.1.tar.bz2", extract_to="Datasets")
 
 dataset_path = "Datasets/LJSpeech-1.1"
 metadata_path = dataset_path + "/metadata.csv"
@@ -102,11 +104,11 @@ model.compile(
 model.summary(line_length=110)
 
 # Define callbacks
-earlystopper = EarlyStopping(monitor='val_CER', patience=20, verbose=1, mode='min')
-checkpoint = ModelCheckpoint(f"{configs.model_path}/model.h5", monitor='val_CER', verbose=1, save_best_only=True, mode='min')
+earlystopper = EarlyStopping(monitor="val_CER", patience=20, verbose=1, mode="min")
+checkpoint = ModelCheckpoint(f"{configs.model_path}/model.h5", monitor="val_CER", verbose=1, save_best_only=True, mode="min")
 trainLogger = TrainLogger(configs.model_path)
-tb_callback = TensorBoard(f'{configs.model_path}/logs', update_freq=1)
-reduceLROnPlat = ReduceLROnPlateau(monitor='val_CER', factor=0.8, min_delta=1e-10, patience=5, verbose=1, mode='auto')
+tb_callback = TensorBoard(f"{configs.model_path}/logs", update_freq=1)
+reduceLROnPlat = ReduceLROnPlateau(monitor="val_CER", factor=0.8, min_delta=1e-10, patience=5, verbose=1, mode="auto")
 model2onnx = Model2onnx(f"{configs.model_path}/model.h5")
 
 # Train the model
@@ -119,5 +121,5 @@ model.fit(
 )
 
 # Save training and validation datasets as csv files
-train_data_provider.to_csv(os.path.join(configs.model_path, 'train.csv'))
-val_data_provider.to_csv(os.path.join(configs.model_path, 'val.csv'))
+train_data_provider.to_csv(os.path.join(configs.model_path, "train.csv"))
+val_data_provider.to_csv(os.path.join(configs.model_path, "val.csv"))

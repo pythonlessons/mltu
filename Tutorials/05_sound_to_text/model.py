@@ -4,7 +4,8 @@ from keras.models import Model
 
 from mltu.tensorflow.model_utils import residual_block, activation_layer
 
-def train_model(input_dim, output_dim, activation='leaky_relu', dropout=0.2):
+
+def train_model(input_dim, output_dim, activation="leaky_relu", dropout=0.2):
     
     inputs = layers.Input(shape=input_dim, name="input")
 
@@ -14,12 +15,12 @@ def train_model(input_dim, output_dim, activation='leaky_relu', dropout=0.2):
     # Convolution layer 1
     x = layers.Conv2D(filters=32, kernel_size=[11, 41], strides=[2, 2], padding="same", use_bias=False)(input)
     x = layers.BatchNormalization()(x)
-    x = activation_layer(x, activation='leaky_relu')
+    x = activation_layer(x, activation="leaky_relu")
 
     # Convolution layer 2
     x = layers.Conv2D(filters=32, kernel_size=[11, 21], strides=[1, 2], padding="same", use_bias=False)(x)
     x = layers.BatchNormalization()(x)
-    x = activation_layer(x, activation='leaky_relu')
+    x = activation_layer(x, activation="leaky_relu")
     
     # Reshape the resulted volume to feed the RNNs layers
     x = layers.Reshape((-1, x.shape[-2] * x.shape[-1]))(x)
@@ -41,7 +42,7 @@ def train_model(input_dim, output_dim, activation='leaky_relu', dropout=0.2):
 
     # Dense layer
     x = layers.Dense(256)(x)
-    x = activation_layer(x, activation='leaky_relu')
+    x = activation_layer(x, activation="leaky_relu")
     x = layers.Dropout(dropout)(x)
 
     # Classification layer
