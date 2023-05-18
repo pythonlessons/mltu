@@ -13,7 +13,7 @@ class BaseModelConfigs:
                             if key not in ['__module__', '__init__', '__doc__', '__annotations__']}
         instance_attributes = self.__dict__
 
-        # first init with class attributes then apply instance attributes, overwriting any existing duplicate attributes
+        # first init with class attributes then apply instance attributes overwriting any existing duplicate attributes
         all_attributes = class_attributes.copy()
         all_attributes.update(instance_attributes)
 
