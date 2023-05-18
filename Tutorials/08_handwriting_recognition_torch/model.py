@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-def activation_layer(activation: str='relu', alpha: float=0.1, inplace: bool=True):
+
+def activation_layer(activation: str="relu", alpha: float=0.1, inplace: bool=True):
     """ Activation layer wrapper for LeakyReLU and ReLU activation functions
 
     Args:
@@ -12,11 +13,12 @@ def activation_layer(activation: str='relu', alpha: float=0.1, inplace: bool=Tru
     Returns:
         torch.Tensor: activation layer
     """
-    if activation == 'relu':
+    if activation == "relu":
         return nn.ReLU(inplace=inplace)
     
-    elif activation == 'leaky_relu':
+    elif activation == "leaky_relu":
         return nn.LeakyReLU(negative_slope=alpha, inplace=inplace)
+
 
 class ConvBlock(nn.Module):
     """ Convolutional block with batch normalization
@@ -31,7 +33,7 @@ class ConvBlock(nn.Module):
 
 
 class ResidualBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, skip_conv=True, stride=1, dropout=0.2, activation='leaky_relu'):
+    def __init__(self, in_channels, out_channels, skip_conv=True, stride=1, dropout=0.2, activation="leaky_relu"):
         super(ResidualBlock, self).__init__()
         self.convb1 = ConvBlock(in_channels, out_channels, kernel_size=3, stride=stride, padding=1)
         self.act1 = activation_layer(activation)
@@ -63,7 +65,7 @@ class ResidualBlock(nn.Module):
 
 class Network(nn.Module):
     """ Handwriting recognition network for CTC loss"""
-    def __init__(self, num_chars: int, activation: str='leaky_relu', dropout: float=0.2):
+    def __init__(self, num_chars: int, activation: str="leaky_relu", dropout: float=0.2):
         super(Network, self).__init__()
 
         self.rb1 = ResidualBlock(3, 16, skip_conv = True, stride=1, activation=activation, dropout=dropout)

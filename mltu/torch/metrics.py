@@ -40,7 +40,7 @@ class Accuracy(Metric):
     Args:
         name (str, optional): name of metric. Defaults to 'accuracy'.
     """
-    def __init__(self, name='accuracy') -> None:
+    def __init__(self, name="accuracy") -> None:
         super(Accuracy, self).__init__(name=name)
         self.correct = 0
         self.total = 0
@@ -73,7 +73,7 @@ class CERMetric(Metric):
     def __init__(
         self, 
         vocabulary: typing.Union[str, list],
-        name: str='CER'
+        name: str = "CER"
     ) -> None:
         super(CERMetric, self).__init__(name=name)
         self.vocabulary = vocabulary
@@ -126,7 +126,7 @@ class WERMetric(Metric):
     def __init__(
         self, 
         vocabulary: typing.Union[str, list],
-        name: str='WER'
+        name: str = "WER"
     ) -> None:
         super(WERMetric, self).__init__(name=name)
         self.vocabulary = vocabulary

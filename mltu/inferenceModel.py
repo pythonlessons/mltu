@@ -28,7 +28,7 @@ class OnnxInferenceModel:
         if not os.path.exists(self.model_path):
             raise Exception(f"Model path ({self.model_path}) does not exist")
 
-        providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] if ort.get_device() == "GPU" and not force_cpu else ['CPUExecutionProvider']
+        providers = ["CUDAExecutionProvider", "CPUExecutionProvider"] if ort.get_device() == "GPU" and not force_cpu else ["CPUExecutionProvider"]
 
         self.model = ort.InferenceSession(self.model_path, providers=providers)
 
@@ -40,7 +40,7 @@ class OnnxInferenceModel:
                 
         # Update providers priority to only CPUExecutionProvider
         if self.force_cpu:
-            self.model.set_providers(['CPUExecutionProvider'])
+            self.model.set_providers(["CPUExecutionProvider"])
 
         self.input_shape = self.model.get_inputs()[0].shape[1:]
         self.input_name = self.model._inputs_meta[0].name

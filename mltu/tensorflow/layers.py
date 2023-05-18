@@ -46,7 +46,7 @@ class SelfAttention(layers.Layer):
         Returns:
             tf.keras.layers.Layer: The created convolutional layer.
         """
-        conv = layers.Conv2D(filters=filters, kernel_size=1, strides=1, padding='same')
+        conv = layers.Conv2D(filters=filters, kernel_size=1, strides=1, padding="same")
         if self.wrapper:
             conv = self.wrapper(conv)
 
@@ -105,8 +105,8 @@ class SpectralNormalization(tf.keras.layers.Wrapper):
         self.eps = eps
         if not isinstance(layer, tf.keras.layers.Layer):
             raise ValueError(
-                'Please initialize `TimeDistributed` layer with a '
-                '`Layer` instance. You passed: {input}'.format(input=layer))
+                "Please initialize `TimeDistributed` layer with a "
+                "`Layer` instance. You passed: {input}".format(input=layer))
 
     def build(self, input_shape):
         if not self.layer.built:
@@ -118,13 +118,13 @@ class SpectralNormalization(tf.keras.layers.Wrapper):
         # self.v = self.add_weight(shape=(1, self.w_shape[0] * self.w_shape[1] * self.w_shape[2]),
         #                          initializer=tf.initializers.TruncatedNormal(stddev=0.02),
         #                          trainable=False,
-        #                          name='sn_v',
+        #                          name="sn_v",
         #                          dtype=tf.float32)
 
         self.u = self.add_weight(shape=(1, self.w_shape[-1]),
                                  initializer=tf.initializers.TruncatedNormal(stddev=0.02),
                                  trainable=False,
-                                 name='sn_u',
+                                 name="sn_u",
                                  dtype=tf.float32)
 
         super(SpectralNormalization, self).build()

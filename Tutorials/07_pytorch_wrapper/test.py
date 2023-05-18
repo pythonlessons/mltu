@@ -6,12 +6,13 @@ import requests, gzip, os, hashlib
 
 from model import Net
 
-path='Datasets/mnist' # Path where to save the downloaded mnist dataset
+path = "Datasets/mnist" # Path where to save the downloaded mnist dataset
+
 def fetch(url):
     if os.path.exists(path) is False:
         os.makedirs(path)
 
-    fp = os.path.join(path, hashlib.md5(url.encode('utf-8')).hexdigest())
+    fp = os.path.join(path, hashlib.md5(url.encode("utf-8")).hexdigest())
     if os.path.isfile(fp):
         with open(fp, "rb") as f:
             data = f.read()
@@ -25,7 +26,7 @@ test_data = fetch("http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz")[
 test_targets = fetch("http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz")[8:]
 
 # output path
-model_path = 'Model/07_pytorch_wrapper'
+model_path = "Model/07_pytorch_wrapper"
 
 # construct network and load weights
 network = Net()
@@ -47,7 +48,7 @@ for test_image, test_target in zip(test_data, test_targets):
     test_image = cv2.resize(test_image, (400, 400))
     cv2.imshow(prediction, test_image)
     key = cv2.waitKey(0)
-    if key == ord('q'): # break on q key
+    if key == ord("q"): # break on q key
         break
  
     cv2.destroyAllWindows()

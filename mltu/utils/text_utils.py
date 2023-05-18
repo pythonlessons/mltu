@@ -1,9 +1,10 @@
 import typing
 import numpy as np
 from itertools import groupby
-    
+
+
 def ctc_decoder(predictions: np.ndarray, chars: typing.Union[str, list]) -> typing.List[str]:
-    ''' CTC greedy decoder for predictions
+    """ CTC greedy decoder for predictions
     
     Args:
         predictions (np.ndarray): predictions from model
@@ -11,7 +12,7 @@ def ctc_decoder(predictions: np.ndarray, chars: typing.Union[str, list]) -> typi
 
     Returns:
         typing.List[str]: list of words
-    '''
+    """
     # use argmax to find the index of the highest probability
     argmax_preds = np.argmax(predictions, axis=-1)
     
@@ -111,12 +112,13 @@ def get_wer(
 
     return errors / total_words
 
-if __name__ == '__main__':
-    c1 = 'ROKAS'
-    c2 = 'ROKAZ '
 
-    w1 = 'ROKAS GOOD BOY'
-    w2 = 'ROKAZ IS A GOOD BOY'
+if __name__ == "__main__":
+    c1 = "ROKAS"
+    c2 = "ROKAZ "
+
+    w1 = "ROKAS GOOD BOY"
+    w2 = "ROKAZ IS A GOOD BOY"
 
     cer = get_cer(c1, c2)
     wer = get_wer(w1, w2)

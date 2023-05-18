@@ -3,11 +3,12 @@ from setuptools import setup
 
 DIR = os.path.abspath(os.path.dirname(__file__))
 
-with open(os.path.join(DIR, 'README.md')) as fh:
+with open(os.path.join(DIR, "README.md")) as fh:
     long_description = fh.read()
 
-with open(os.path.join(DIR, 'requirements.txt')) as fh:
+with open(os.path.join(DIR, "requirements.txt")) as fh:
     requirements = fh.read().splitlines()
+
 
 def get_version(initpath: str) -> str:
     """ Get from the init of the source code the version string
@@ -28,24 +29,25 @@ def get_version(initpath: str) -> str:
         else:
             raise RuntimeError("Unable to find version string.")
 
+
 setup(
-    name = 'mltu',
-    version = get_version("mltu/__init__.py"),
-    long_description = long_description,
-    long_description_content_type = 'text/markdown',
-    url='https://pylessons.com/',
-    author='PyLessons',
-    author_email='pythonlessons0@gmail.com',
+    name="mltu",
+    version=get_version("mltu/__init__.py"),
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://pylessons.com/",
+    author="PyLessons",
+    author_email="pythonlessons0@gmail.com",
     install_requires=requirements,
     extras_require={
-        'gpu': ['onnxruntime-gpu'],
+        "gpu": ["onnxruntime-gpu"],
     },
-    python_requires='>=3',
-    packages = ['mltu', 'mltu.utils', 'mltu.torch', 'mltu.tensorflow', 'mltu.annotations'],
+    python_requires=">=3",
+    packages=["mltu", "mltu.utils", "mltu.torch", "mltu.tensorflow", "mltu.annotations"],
     include_package_data=True,
     project_urls={
-        'Source': 'https://github.com/pythonlessons/mltu/',
-        'Tracker': 'https://github.com/pythonlessons/mltu/issues',
+        "Source": "https://github.com/pythonlessons/mltu/",
+        "Tracker": "https://github.com/pythonlessons/mltu/issues",
     },
-    description="Machine Learning Training Utilities (MLTU) for TenosrFlow and PyTorch",
+    description="Machine Learning Training Utilities (MLTU) for TensorFlow and PyTorch",
 )

@@ -48,7 +48,7 @@ class TrainLogger(Callback):
         log_file (str, optional): Name of the log file. Defaults to 'logs.log'.
         logLevel (int, optional): Logging level. Defaults to logging.INFO.
     """
-    def __init__(self, log_path: str, log_file: str='logs.log', logLevel=logging.INFO, console_output=False) -> None:
+    def __init__(self, log_path: str, log_file: str="logs.log", logLevel=logging.INFO, console_output=False) -> None:
         super().__init__()
         self.log_path = log_path
         self.log_file = log_file
@@ -59,7 +59,7 @@ class TrainLogger(Callback):
         self.logger = logging.getLogger()
         self.logger.setLevel(logLevel)
 
-        self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        self.formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
         self.file_handler = logging.FileHandler(os.path.join(self.log_path, self.log_file))
         self.file_handler.setLevel(logLevel)

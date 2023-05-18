@@ -12,12 +12,13 @@ from torchsummary import summary
 from model import Net
 
 # define path to store dataset
-path='Datasets/mnist'
+path = "Datasets/mnist"
+
 def fetch(url):
     if os.path.exists(path) is False:
         os.makedirs(path)
 
-    fp = os.path.join(path, hashlib.md5(url.encode('utf-8')).hexdigest())
+    fp = os.path.join(path, hashlib.md5(url.encode("utf-8")).hexdigest())
     if os.path.isfile(fp):
         with open(fp, "rb") as f:
             data = f.read()
@@ -38,7 +39,7 @@ test_targets = fetch("http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
 #     train_image = cv2.resize(train_image, (400, 400))
 #     cv2.imshow("Image", train_image)
 #     # if Q button break this loop
-#     if cv2.waitKey(0) & 0xFF == ord('q'):
+#     if cv2.waitKey(0) & 0xFF == ord("q"):
 #         break
 # cv2.destroyAllWindows()
 
@@ -122,13 +123,14 @@ def test(epoch):
 
             val_pbar.set_description(f"val_loss: {loss_sum / index:.4f}, val_accuracy: {correct / index:.4f}")
 
+
 # train and test the model
 for epoch in range(1, n_epochs + 1):
     train(epoch)
     test(epoch)
 
 # define output path and create folder if not exists
-output_path = 'Models/06_pytorch_introduction'
+output_path = "Models/06_pytorch_introduction"
 if not os.path.exists(output_path):
     os.makedirs(output_path)
 

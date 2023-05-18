@@ -40,7 +40,8 @@ class CustomModel(Model):
         # Note that it will include the loss (tracked in self.metrics).
         return {m.name: m.result() for m in self.metrics}
 
-def activation_layer(layer, activation: str='relu', alpha: float=0.1) -> tf.Tensor:
+
+def activation_layer(layer, activation: str="relu", alpha: float=0.1) -> tf.Tensor:
     """ Activation layer wrapper for LeakyReLU and ReLU activation functions
     Args:
         layer: tf.Tensor
@@ -49,24 +50,24 @@ def activation_layer(layer, activation: str='relu', alpha: float=0.1) -> tf.Tens
     Returns:
         tf.Tensor
     """
-    if activation == 'relu':
+    if activation == "relu":
         layer = layers.ReLU()(layer)
-    elif activation == 'leaky_relu':
+    elif activation == "leaky_relu":
         layer = layers.LeakyReLU(alpha=alpha)(layer)
 
     return layer
 
+
 def residual_block(
-    x: tf.Tensor,
-    filter_num: int,
-    strides: typing.Union[int, list]=2, 
-    kernel_size: typing.Union[int, list]=3, 
-    skip_conv: bool=True, 
-    padding: str='same', 
-    kernel_initializer: str='he_uniform', 
-    activation: str='relu', 
-    dropout: float=0.2
-    ):
+        x: tf.Tensor,
+        filter_num: int,
+        strides: typing.Union[int, list] = 2,
+        kernel_size: typing.Union[int, list] = 3,
+        skip_conv: bool = True,
+        padding: str = "same",
+        kernel_initializer: str = "he_uniform",
+        activation: str = "relu",
+        dropout: float = 0.2):
     # Create skip connection tensor
     x_skip = x
 

@@ -9,7 +9,7 @@ import logging
 
 from . import Image
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s')
+logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 matplotlib.interactive(False)
 
 
@@ -118,9 +118,9 @@ class WavReader:
 
         plt.figure(figsize=(15, 5))
         plt.plot(time, audio)
-        plt.title(title) if title else plt.title('Audio Plot')
-        plt.ylabel('signal wave')
-        plt.xlabel('time (s)')
+        plt.title(title) if title else plt.title("Audio Plot")
+        plt.ylabel("signal wave")
+        plt.xlabel("time (s)")
         plt.tight_layout()
         plt.show()
 
@@ -141,10 +141,10 @@ class WavReader:
             spectrogram = spectrogram[::-1]
 
         plt.figure(figsize=(15, 5))
-        plt.imshow(spectrogram, aspect='auto', origin='lower')
-        plt.title(f'Spectrogram: {title}')
-        plt.xlabel('Time')
-        plt.ylabel('Frequency')
+        plt.imshow(spectrogram, aspect="auto", origin="lower")
+        plt.title(f"Spectrogram: {title}")
+        plt.xlabel("Time")
+        plt.ylabel("Frequency")
         plt.colorbar()
         plt.tight_layout()
         plt.show()
@@ -197,12 +197,12 @@ class ImageCropper:
         if source_width >= self._width:
             image_numpy = image_numpy[:, self._width_offset:self._width + self._width_offset]
         else:
-            raise Exception('unexpected')
+            raise Exception("unexpected")
 
         if source_height >= self._height:
             image_numpy = image_numpy[self._height_offset:self._height + self._height_offset, :]
         else:
-            raise Exception('unexpected')
+            raise Exception("unexpected")
 
         image.update(image_numpy)
 

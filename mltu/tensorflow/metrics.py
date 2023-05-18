@@ -9,7 +9,7 @@ class CWERMetric(tf.keras.metrics.Metric):
         name: (Optional) string name of the metric instance.
         **kwargs: Additional keyword arguments.
     """
-    def __init__(self, padding_token, name='CWER', **kwargs):
+    def __init__(self, padding_token, name="CWER", **kwargs):
         # Initialize the base Metric class
         super(CWERMetric, self).__init__(name=name, **kwargs)
         
@@ -31,7 +31,7 @@ class CWERMetric(tf.keras.metrics.Metric):
         """
         # Get the input shape and length
         input_shape = tf.keras.backend.shape(y_pred)
-        input_length = tf.ones(shape=input_shape[0], dtype='int32') * tf.cast(input_shape[1], 'int32')
+        input_length = tf.ones(shape=input_shape[0], dtype="int32") * tf.cast(input_shape[1], "int32")
 
         # Decode the predicted labels using greedy decoding
         decode_predicted, log = tf.keras.backend.ctc_decode(y_pred, input_length, greedy=True)
@@ -79,7 +79,7 @@ class CERMetric(tf.keras.metrics.Metric):
         name: (Optional) string name of the metric instance.
         **kwargs: Additional keyword arguments.
     """
-    def __init__(self, vocabulary, name='CER', **kwargs):
+    def __init__(self, vocabulary, name="CER", **kwargs):
         # Initialize the base Metric class
         super(CERMetric, self).__init__(name=name, **kwargs)
         
@@ -134,7 +134,7 @@ class CERMetric(tf.keras.metrics.Metric):
         """
         # Get the input shape and length
         input_shape = tf.keras.backend.shape(y_pred)
-        input_length = tf.ones(shape=input_shape[0], dtype='int32') * tf.cast(input_shape[1], 'int32')
+        input_length = tf.ones(shape=input_shape[0], dtype="int32") * tf.cast(input_shape[1], "int32")
 
         # Decode the predicted labels using greedy decoding
         decode_predicted, log = tf.keras.backend.ctc_decode(y_pred, input_length, greedy=True)
@@ -165,7 +165,7 @@ class WERMetric(tf.keras.metrics.Metric):
         name: (Optional) string name of the metric instance.
         **kwargs: Additional keyword arguments.
     """
-    def __init__(self, vocabulary: str, name='WER', **kwargs):
+    def __init__(self, vocabulary: str, name="WER", **kwargs):
         # Initialize the base Metric class
         super(WERMetric, self).__init__(name=name, **kwargs)
         
@@ -201,10 +201,10 @@ class WERMetric(tf.keras.metrics.Metric):
         input_binary_chars = tf.gather(vocab, input_ragged)
 
         # Join the binary character tensor along the sequence axis to get the input strings
-        input_strings = tf.strings.reduce_join(input_binary_chars, axis=1, separator='')
+        input_strings = tf.strings.reduce_join(input_binary_chars, axis=1, separator="")
 
         # Convert the input strings tensor to a sparse tensor
-        input_sparse_string = tf.strings.split(input_strings, sep=' ').to_sparse()
+        input_sparse_string = tf.strings.split(input_strings, sep=" ").to_sparse()
 
         return input_sparse_string
 
@@ -232,7 +232,7 @@ class WERMetric(tf.keras.metrics.Metric):
         """
         # Get the input shape and length
         input_shape = tf.keras.backend.shape(y_pred)
-        input_length = tf.ones(shape=input_shape[0], dtype='int32') * tf.cast(input_shape[1], 'int32')
+        input_length = tf.ones(shape=input_shape[0], dtype="int32") * tf.cast(input_shape[1], "int32")
 
         # Decode the predicted labels using greedy decoding
         decode_predicted, log = tf.keras.backend.ctc_decode(y_pred, input_length, greedy=True)

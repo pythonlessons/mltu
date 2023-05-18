@@ -183,14 +183,14 @@ class PillowImage(Image):
 
         if isinstance(image, str):
             if not os.path.exists(image):
-                raise FileNotFoundError(f'Image {image} not found.')
+                raise FileNotFoundError(f"Image {image} not found.")
 
             self.path = image
             self._image = PilImage.open(image)
 
             self.init_successful = True
         else:
-            raise TypeError('Image must be a path to an image')
+            raise TypeError("Image must be a path to an image")
 
         if self.is_animated:
             # initialize whatever attributes we can already determine at this stage, i.e. width & height.
@@ -202,12 +202,12 @@ class PillowImage(Image):
 
     @property
     def is_animated(self) -> bool:
-        return hasattr(self._image, 'is_animated') and self._image.is_animated
+        return hasattr(self._image, "is_animated") and self._image.is_animated
 
     @property
     def image(self) -> np.ndarray:
         if self.is_animated:
-            raise Exception('convert to single image first')
+            raise Exception("convert to single image first")
 
         return np.asarray(self._image)
 
@@ -224,20 +224,20 @@ class PillowImage(Image):
         return self.width // 2, self.height // 2
 
     def RGB(self) -> np.ndarray:
-        if self.color == 'RGB':
+        if self.color == "RGB":
             return self.image
-        elif self.color == 'BGR':
+        elif self.color == "BGR":
             return cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
         else:
             raise ValueError(f"Unknown color format {self.color}")
 
     def HSV(self) -> np.ndarray:
-        if self.color == 'BGR':
+        if self.color == "BGR":
             return cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
-        elif self.color == 'RGB':
+        elif self.color == "RGB":
             return cv2.cvtColor(self.image, cv2.COLOR_RGB2HSV)
         else:
-            raise ValueError(f'Unknown color format {self.color}')
+            raise ValueError(f"Unknown color format {self.color}")
 
     def _init_attributes(self):
         self.color = self._image.mode
@@ -253,7 +253,7 @@ class PillowImage(Image):
         elif isinstance(image, np.ndarray):
             self._image = PilImage.fromarray(image)
         else:
-            raise TypeError(f'image must be a Pillow Image or np.ndarray, not {type(image)}')
+            raise TypeError(f"image must be a Pillow Image or np.ndarray, not {type(image)}")
 
         if not self.is_animated:
             self._init_attributes()
@@ -271,10 +271,10 @@ class PillowImage(Image):
         """
         # axis must be either 0 or 1
         if axis not in [0, 1]:
-            raise ValueError(f'axis must be either 0 or 1, not {axis}')
+            raise ValueError(f"axis must be either 0 or 1, not {axis}")
 
         if self.is_animated:
-            raise Exception('convert to single image first')
+            raise Exception("convert to single image first")
 
         if axis == 0:
             self._image = PilImage.fromarray(np.asarray(self._image)[:, ::-1])

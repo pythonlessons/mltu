@@ -5,7 +5,7 @@ import numpy as np
 from . import Image
 
 import logging
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s')
+logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -125,7 +125,8 @@ class LabelPadding(Transformer):
         self.padding_value = padding_value
 
     def __call__(self, data: np.ndarray, label: np.ndarray):
-        return data, np.pad(label, (0, self.max_word_length - len(label)), 'constant', constant_values=self.padding_value)
+        return data, np.pad(label, (0, self.max_word_length - len(label)), "constant", constant_values=self.padding_value)
+
 
 class SpectrogramPadding(Transformer):
     """Pad spectrogram to max_spectrogram_length
@@ -143,7 +144,7 @@ class SpectrogramPadding(Transformer):
         self.padding_value = padding_value
 
     def __call__(self, spectrogram: np.ndarray, label: np.ndarray):
-        padded_spectrogram = np.pad(spectrogram, ((self.max_spectrogram_length - spectrogram.shape[0], 0),(0,0)), mode='constant', constant_values=self.padding_value)
+        padded_spectrogram = np.pad(spectrogram, ((self.max_spectrogram_length - spectrogram.shape[0], 0),(0,0)), mode="constant", constant_values=self.padding_value)
 
         return padded_spectrogram, label
 
@@ -153,9 +154,9 @@ class ImageShowCV2(Transformer):
     """
     def __init__(
         self, 
-        verbose: bool=True, 
+        verbose: bool = True,
         log_level: int = logging.INFO,
-        name: str = 'Image'
+        name: str = "Image"
         ) -> None:
         """
         Args:
@@ -180,7 +181,7 @@ class ImageShowCV2(Transformer):
         """
         if self.verbose:
             if isinstance(label, (str, int, float)):
-                self.logger.info(f'Label: {label}')
+                self.logger.info(f"Label: {label}")
 
         cv2.imshow(self.name, image.numpy())
         cv2.waitKey(0)

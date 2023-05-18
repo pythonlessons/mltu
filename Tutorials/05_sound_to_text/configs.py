@@ -6,7 +6,7 @@ from mltu.configs import BaseModelConfigs
 class ModelConfigs(BaseModelConfigs):
     def __init__(self):
         super().__init__()
-        self.model_path = os.path.join('Models/05_sound_to_text', datetime.strftime(datetime.now(), "%Y%m%d%H%M"))
+        self.model_path = os.path.join("Models/05_sound_to_text", datetime.strftime(datetime.now(), "%Y%m%d%H%M"))
         self.frame_length = 256 
         self.frame_step = 160
         self.fft_length = 384

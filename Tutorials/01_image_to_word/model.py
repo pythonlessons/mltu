@@ -3,7 +3,8 @@ from keras.models import Model
 
 from mltu.tensorflow.model_utils import residual_block
 
-def train_model(input_dim, output_dim, activation='leaky_relu', dropout=0.2):
+
+def train_model(input_dim, output_dim, activation="leaky_relu", dropout=0.2):
     
     inputs = layers.Input(shape=input_dim, name="input")
 
@@ -24,7 +25,7 @@ def train_model(input_dim, output_dim, activation='leaky_relu', dropout=0.2):
 
     blstm = layers.Bidirectional(layers.LSTM(64, return_sequences=True))(squeezed)
 
-    output = layers.Dense(output_dim + 1, activation='softmax', name="output")(blstm)
+    output = layers.Dense(output_dim + 1, activation="softmax", name="output")(blstm)
 
     model = Model(inputs=inputs, outputs=output)
     return model
