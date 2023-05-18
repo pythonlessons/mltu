@@ -250,20 +250,21 @@ class TensorBoard(Callback):
 
 class Model2onnx(Callback):
     """Converts the model from PyTorch to ONNX format after training."""
+
     def __init__(
-        self, 
-        saved_model_path: str,
-        input_shape: tuple,
-        export_params: bool = True,
-        opset_version: int = 14,
-        do_constant_folding: bool = True,
-        input_names: list = ['input'],
-        output_names: list = ['output'],
-        dynamic_axes: dict = {'input': {0 : 'batch_size'},
-                              'output': {0 : 'batch_size'}},
-        verbose: bool = False,
-        metadata: dict = None,
-        ) -> None:
+            self,
+            saved_model_path: str,
+            input_shape: tuple,
+            export_params: bool = True,
+            opset_version: int = 14,
+            do_constant_folding: bool = True,
+            input_names: list = ['input'],
+            output_names: list = ['output'],
+            dynamic_axes: dict = {'input': {0: 'batch_size'},
+                                  'output': {0: 'batch_size'}},
+            verbose: bool = False,
+            metadata: dict = None,
+    ) -> None:
         """ Converts the model from PyTorch to ONNX format after training.
 
         Args:
