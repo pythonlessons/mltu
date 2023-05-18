@@ -1,15 +1,25 @@
 import os
 import yaml
 
+
 class BaseModelConfigs:
     def __init__(self):
         self.model_path = None
 
     def serialize(self):
-        # get object attributes
-        return self.__dict__
+        class_attributes = {key: value
+                            for (key, value)
+                            in type(self).__dict__.items()
+                            if key not in ['__module__', '__init__', '__doc__', '__annotations__']}
+        instance_attributes = self.__dict__
 
-    def save(self, name: str="configs.yaml"):
+        # first init with class attributes then apply instance attributes, overwriting any existing duplicate attributes
+        all_attributes = class_attributes.copy()
+        all_attributes.update(instance_attributes)
+
+        return all_attributes
+
+    def save(self, name: str = "configs.yaml"):
         if self.model_path is None:
             raise Exception("Model path is not specified")
 
