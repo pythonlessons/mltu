@@ -61,7 +61,7 @@ class DataProvider:
 
         # Validate dataset
         if not skip_validation:
-            self._dataset = self.validate(dataset, skip_validation, limit)
+            self._dataset = self.validate(dataset)
         else:
             self.logger.info("Skipping Dataset validation...")
 
@@ -135,7 +135,7 @@ class DataProvider:
             self._dataset.remove(remove)
         self._on_epoch_end_remove = []
 
-    def validate_list_dataset(self, dataset: list, skip_validation: bool = False) -> list:
+    def validate_list_dataset(self, dataset: list) -> list:
         """ Validate a list dataset """
         validated_data = [data for data in tqdm(dataset, desc="Validating Dataset") if os.path.exists(data[0])]
         if not validated_data:
@@ -143,16 +143,16 @@ class DataProvider:
 
         return validated_data
 
-    def validate(self, dataset: typing.Union[str, list, pd.DataFrame], skip_validation: bool) -> list:
+    def validate(self, dataset: typing.Union[str, list, pd.DataFrame]) -> typing.Union[list, str]:
         """ Validate the dataset and return the dataset """
 
         if isinstance(dataset, str):
             if os.path.exists(dataset):
                 return dataset
         elif isinstance(dataset, list):
-            return self.validate_list_dataset(dataset, skip_validation)
+            return self.validate_list_dataset(dataset)
         elif isinstance(dataset, pd.DataFrame):
-            return self.validate_list_dataset(dataset.values.tolist(), skip_validation)
+            return self.validate_list_dataset(dataset.values.tolist())
         else:
             raise TypeError("Dataset must be a path, list or pandas dataframe.")
 
