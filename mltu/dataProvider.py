@@ -14,19 +14,19 @@ logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
 class DataProvider:
     def __init__(
-        self, 
-        dataset: typing.Union[str, list, pd.DataFrame],
-        data_preprocessors: typing.List[typing.Callable] = None,
-        batch_size: int = 4,
-        shuffle: bool = True,
-        initial_epoch: int = 1,
-        augmentors: typing.List[Augmentor] = None,
-        transformers: typing.List[Transformer] = None,
-        skip_validation: bool = True,
-        limit: int = None,
-        use_cache: bool = False,
-        log_level: int = logging.INFO,
-        ) -> None:
+            self,
+            dataset: typing.Union[str, list, pd.DataFrame],
+            data_preprocessors: typing.List[typing.Callable] = None,
+            batch_size: int = 4,
+            shuffle: bool = True,
+            initial_epoch: int = 1,
+            augmentors: typing.List[Augmentor] = None,
+            transformers: typing.List[Transformer] = None,
+            skip_validation: bool = True,
+            limit: int = None,
+            use_cache: bool = False,
+            log_level: int = logging.INFO,
+    ) -> None:
         """ Standardised object for providing data to a model while training.
 
         Attributes:
@@ -91,8 +91,6 @@ class DataProvider:
             else:
                 self.logger.warning(f"Augmentor {augmentor} is not an instance of Augmentor.")
 
-        return self._augmentors
-
     @property
     def transformers(self) -> typing.List[Transformer]:
         """ Return transformers """
@@ -110,8 +108,6 @@ class DataProvider:
 
             else:
                 self.logger.warning(f"Transformer {transformer} is not an instance of Transformer.")
-
-        return self._transformers
 
     @property
     def epoch(self) -> int:
@@ -131,7 +127,7 @@ class DataProvider:
 
         # Remove any samples that were marked for removal
         for remove in self._on_epoch_end_remove:
-            self.logger.warn(f"Removing {remove} from dataset.")
+            self.logger.warning(f"Removing {remove} from dataset.")
             self._dataset.remove(remove)
         self._on_epoch_end_remove = []
 
@@ -176,7 +172,7 @@ class DataProvider:
 
         return train_data_provider, val_data_provider
 
-    def to_csv(self, path: str, index: bool=False) -> None:
+    def to_csv(self, path: str, index: bool = False) -> None:
         """ Save the dataset to a csv file 
 
         Args:
@@ -230,8 +226,8 @@ class DataProvider:
 
         # Then augment, transform and postprocess the batch data
         for objects in [self._augmentors, self._transformers]:
-            for object in objects:
-                data, annotation = object(data, annotation)
+            for _object in objects:
+                data, annotation = _object(data, annotation)
 
         # Convert to numpy array if not already
         if not isinstance(data, np.ndarray):
