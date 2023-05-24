@@ -1,3 +1,11 @@
+## [1.0.9] - 2022-05-24
+### Changed
+- Fixed styling, changed all string from single quotes to double quotes, corrected comments, etc.
+
+### Added
+- Added `CVImage` and `PillowImage` objects in `mltu.annotations.image` to handle image annotations
+
+
 ## [1.0.8] - 2022-04-24
 ### Added
 - Added `RandomSaltAndPepper` augmentor into `mltu.augmentors`
