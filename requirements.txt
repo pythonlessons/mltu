@@ -3,8 +3,8 @@ tqdm
 pandas
 numpy
 opencv-python
-Pillow==9.4.0
-onnxruntime # onnxruntime-gpu for GPU support
+Pillow
+onnxruntime>=1.15.0  # onnxruntime-gpu for GPU support
 librosa==0.9.2
 matplotlib
 onnx==1.14.0
