@@ -5,7 +5,7 @@ numpy
 opencv-python
 Pillow
 onnxruntime>=1.15.0  # onnxruntime-gpu for GPU support
-librosa==0.9.2
+librosa>=0.9.2
 matplotlib
-onnx==1.14.0
-tf2onnx==1.14.0
+onnx>=1.14.0
+tf2onnx>=1.14.0
