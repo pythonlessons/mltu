@@ -5,9 +5,6 @@ import numpy as np
 from . import Image
 
 import logging
-logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 class Transformer:

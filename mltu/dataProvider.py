@@ -9,7 +9,6 @@ from .augmentors import Augmentor
 from .transformers import Transformer
 
 import logging
-logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
 
 class DataProvider:
