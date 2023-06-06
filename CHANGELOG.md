@@ -1,3 +1,8 @@
+## [1.0.10] - 2022-06-06
+### Changed
+- Updated `BaseModelConfigs` in `mltu.configs.py` to include instance_attributes
+- Some minor changes
+
 ## [1.0.9] - 2022-05-24
 ### Changed
 - Fixed styling, changed all string from single quotes to double quotes, corrected comments, etc.

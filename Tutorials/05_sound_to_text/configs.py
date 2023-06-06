@@ -3,6 +3,7 @@ from datetime import datetime
 
 from mltu.configs import BaseModelConfigs
 
+
 class ModelConfigs(BaseModelConfigs):
     def __init__(self):
         super().__init__()
