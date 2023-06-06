@@ -9,8 +9,6 @@ import logging
 
 from . import Image
 
-logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-matplotlib.interactive(False)
 
 
 class ImageReader:
@@ -56,16 +54,19 @@ class WavReader:
         frame_step (int): Step size between frames in samples.
         fft_length (int): Number of FFT components.
     """
+
     def __init__(
-        self, 
-        frame_length: int = 256,
-        frame_step: int = 160,
-        fft_length: int = 384,
-        *args, **kwargs
-        ) -> None:
+            self,
+            frame_length: int = 256,
+            frame_step: int = 160,
+            fft_length: int = 384,
+            *args, **kwargs
+    ) -> None:
         self.frame_length = frame_length
         self.frame_step = frame_step
         self.fft_length = fft_length
+
+        matplotlib.interactive(False)
 
     @staticmethod
     def get_spectrogram(wav_path: str, frame_length: int, frame_step: int, fft_length: int) -> np.ndarray:
