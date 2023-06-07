@@ -1,3 +1,7 @@
+## [1.0.11] - 2022-06-07
+### Changed
+- Downgrade `tf2onnx` and `onnx` versions, they don't work with newest TensorFlow version
+
 ## [1.0.10] - 2022-06-06
 ### Changed
 - Updated `BaseModelConfigs` in `mltu.configs.py` to include instance_attributes
