@@ -4,6 +4,11 @@ from keras.callbacks import Callback
 import logging
 
 class Model2onnx(Callback):
+
+    # import onnx and use as global
+    import onnx
+    import tf2onnx
+
     """ Converts the model to onnx format after training is finished. """
     def __init__(
         self, 
@@ -22,15 +27,15 @@ class Model2onnx(Callback):
     def on_train_end(self, logs=None):
         """ Converts the model to onnx format after training is finished. """
         try:
-            import onnx
-            import tf2onnx
+            # import onnx
+            # import tf2onnx
             self.model.load_weights(self.saved_model_path)
             self.onnx_model_path = self.saved_model_path.replace(".h5", ".onnx")
-            tf2onnx.convert.from_keras(self.model, output_path=self.onnx_model_path)
+            self.tf2onnx.convert.from_keras(self.model, output_path=self.onnx_model_path)
 
             if self.metadata and isinstance(self.metadata, dict):
                 # Load the ONNX model
-                onnx_model = onnx.load(self.onnx_model_path)
+                onnx_model = self.onnx.load(self.onnx_model_path)
 
                 # Add the metadata dictionary to the model's metadata_props attribute
                 for key, value in self.metadata.items():
@@ -39,7 +44,7 @@ class Model2onnx(Callback):
                     meta.value = value
 
                 # Save the modified ONNX model
-                onnx.save(onnx_model, self.onnx_model_path)
+                self.onnx.save(onnx_model, self.onnx_model_path)
 
         except Exception as e:
             print(e)

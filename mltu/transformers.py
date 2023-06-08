@@ -47,6 +47,21 @@ class ImageResizer(Transformer):
         self._padding_color = padding_color
 
     @staticmethod
+    def unpad_maintaining_aspect_ratio(padded_image: np.ndarray, original_width: int, original_height: int) -> np.ndarray:
+        height, width = padded_image.shape[:2]
+        ratio = min(width / original_width, height / original_height)
+
+        delta_w = width - int(original_width * ratio)
+        delta_h = height - int(original_height * ratio)
+        left, right = delta_w//2, delta_w-(delta_w//2)
+        top, bottom = delta_h//2, delta_h-(delta_h//2)
+        unpaded_image = padded_image[top:height-bottom, left:width-right]
+
+        original_image = cv2.resize(unpaded_image, (original_width, original_height))
+
+        return original_image
+
+    @staticmethod
     def resize_maintaining_aspect_ratio(image: np.ndarray, width_target: int, height_target: int, padding_color: typing.Tuple[int]=(0, 0, 0)) -> np.ndarray:
         """ Resize image maintaining aspect ratio and pad with padding_color.
 
@@ -74,18 +89,21 @@ class ImageResizer(Transformer):
         return new_image
 
     def __call__(self, image: Image, label: typing.Any) -> typing.Tuple[Image, typing.Any]:
+        if not isinstance(image, Image):
+            raise TypeError(f"Expected image to be of type Image, got {type(image)}")
+
         # Maintains aspect ratio and resizes with padding.
-        image_numpy = image.numpy()
         if self._keep_aspect_ratio:
             image_numpy = self.resize_maintaining_aspect_ratio(image.numpy(), self._width, self._height, self._padding_color)
-
-            # TODO - Fix this
-            # if isinstance(label, np.ndarray):
-            #     label = self.resize_maintaining_aspect_ratio(label, self._width, self._height, self._padding_color)
-
+            if isinstance(label, Image):
+                label_numpy = self.resize_maintaining_aspect_ratio(label.numpy(), self._width, self._height, self._padding_color)
+                label.update(label_numpy)
         else:   
             # Resizes without maintaining aspect ratio.
-            image_numpy = cv2.resize(image_numpy, (self._width, self._height))
+            image_numpy = cv2.resize(image.numpy(), (self._width, self._height))
+            if isinstance(label, Image):
+                label_numpy = cv2.resize(label.numpy(), (self._width, self._height))
+                label.update(label_numpy)
 
         image.update(image_numpy)
 
@@ -181,6 +199,8 @@ class ImageShowCV2(Transformer):
                 self.logger.info(f"Label: {label}")
 
         cv2.imshow(self.name, image.numpy())
+        if isinstance(label, Image):
+            cv2.imshow(self.name+"Label", label.numpy())
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 

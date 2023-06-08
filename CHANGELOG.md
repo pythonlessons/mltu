@@ -1,3 +1,12 @@
+## [1.0.12] - 2022-06-08
+### Changed
+- Moved `onnx` and `tf2onnx` import inside `mltu.tensorflow.callbacks.Model2onnx` to avoid import errors when not using this callback
+- Removed `onnx` and `tf2onnx` install requirements from global requirements
+
+### Added
+- Added `RandomMirror` and `RandomFlip` augmentors into `mltu.augmentors`
+- Added `u2net` segmentation model into `mltu.tensorflow.models`
+
 ## [1.0.11] - 2022-06-07
 ### Changed
 - Downgrade `tf2onnx` and `onnx` versions, they don't work with newest TensorFlow version

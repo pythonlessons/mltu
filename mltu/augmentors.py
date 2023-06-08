@@ -12,6 +12,8 @@ from . import Image
 - RandomSharpen
 - RandomGaussianBlur
 - RandomSaltAndPepper
+- RandomMirror
+- RandomFlip
 """
 
 
@@ -177,6 +179,11 @@ class RandomRotate(Augmentor):
 
         # perform the actual rotation and return the image
         img = cv2.warpAffine(image.numpy(), M, (nW, nH), borderValue=borderValue)
+
+        if isinstance(annotation, Image):
+            annotation_warp = cv2.warpAffine(annotation.numpy(), M, (nW, nH), borderValue=(0, 0, 0))
+            annotation.update(annotation_warp)
+
         image.update(img)
 
         return image, annotation
@@ -376,5 +383,73 @@ class RandomSaltAndPepper(Augmentor):
         img[row_coords, col_coords, :] = [0, 0, channels]
 
         image.update(img)
+
+        return image, annotation
+    
+
+class RandomMirror(Augmentor):
+    """ Randomly mirror image"""
+    def __init__(
+        self, 
+        random_chance: float = 0.5,
+        log_level: int = logging.INFO,
+        ) -> None:
+        """ Randomly mirror image
+        
+        Args:
+            random_chance (float): Float between 0.0 and 1.0 setting bounds for random probability. Defaults to 0.5.
+            log_level (int): Log level for the augmentor. Defaults to logging.INFO.
+        """
+        super(RandomMirror, self).__init__(random_chance, log_level)
+
+    @randomness_decorator
+    def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
+        """ Randomly mirror an image
+
+        Args:
+            image (Image): Image to be mirrored
+            annotation (typing.Any): Annotation to be mirrored
+
+        Returns:
+            image (Image): Mirrored image
+            annotation (typing.Any): Mirrored annotation if necessary
+        """
+        image = image.flip(0)
+        if isinstance(annotation, Image):
+            annotation = annotation.flip(0)
+
+        return image, annotation
+    
+
+class RandomFlip(Augmentor):
+    """ Randomly flip image"""
+    def __init__(
+        self, 
+        random_chance: float = 0.5,
+        log_level: int = logging.INFO,
+        ) -> None:
+        """ Randomly mirror image
+        
+        Args:
+            random_chance (float): Float between 0.0 and 1.0 setting bounds for random probability. Defaults to 0.5.
+            log_level (int): Log level for the augmentor. Defaults to logging.INFO.
+        """
+        super(RandomFlip, self).__init__(random_chance, log_level)
+
+    @randomness_decorator
+    def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
+        """ Randomly mirror an image
+
+        Args:
+            image (Image): Image to be flipped
+            annotation (typing.Any): Annotation to be flipped
+
+        Returns:
+            image (Image): Flipped image
+            annotation (typing.Any): Flipped annotation if necessary
+        """
+        image = image.flip(1)
+        if isinstance(annotation, Image):
+            annotation = annotation.flip(1)
 
         return image, annotation
