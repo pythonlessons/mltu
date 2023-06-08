@@ -13,7 +13,7 @@ from . import Image
 
 class ImageReader:
     """Read image from path and return image and label"""
-    def __init__(self, image_class, log_level: int = logging.INFO, ) -> None:
+    def __init__(self, image_class: Image, log_level: int = logging.INFO, ) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(log_level)
         self._image_class = image_class
