@@ -33,6 +33,7 @@ def randomness_decorator(func):
         # check if image is Image object
         if not isinstance(image, Image):
             self.logger.error(f"image must be Image object, not {type(image)}, skipping augmentor")
+            # TODO instead of error convert image into Image object
             return image, annotation
 
         if np.random.rand() > self._random_chance:
@@ -51,9 +52,10 @@ class Augmentor:
         random_chance (float, optional): Chance of applying the augmentor. Where 0.0 is never and 1.0 is always. Defaults to 0.5.
         log_level (int, optional): Log level for the augmentor. Defaults to logging.INFO.
     """
-    def __init__(self, random_chance: float=0.5, log_level: int = logging.INFO) -> None:
+    def __init__(self, random_chance: float=0.5, log_level: int = logging.INFO, augment_annotation: bool = False) -> None:
         self._random_chance = random_chance
         self._log_level = log_level
+        self._augment_annotation = augment_annotation
 
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.INFO)
@@ -73,6 +75,7 @@ class RandomBrightness(Augmentor):
         random_chance: float = 0.5,
         delta: int = 100,
         log_level: int = logging.INFO,
+        augment_annotation: bool = False
         ) -> None:
         """ Randomly adjust image brightness
 
@@ -80,12 +83,28 @@ class RandomBrightness(Augmentor):
             random_chance (float, optional): Chance of applying the augmentor. Where 0.0 is never and 1.0 is always. Defaults to 0.5.
             delta (int, optional): Integer value for brightness adjustment. Defaults to 100.
             log_level (int, optional): Log level for the augmentor. Defaults to logging.INFO.
+            augment_annotation (bool, optional): If True, the annotation will be adjusted as well. Defaults to False.
         """
-        super(RandomBrightness, self).__init__(random_chance, log_level)
+        super(RandomBrightness, self).__init__(random_chance, log_level, augment_annotation)
 
         assert 0 <= delta <= 255.0, "Delta must be between 0.0 and 255.0"
 
         self._delta = delta
+
+    def augment(self, image: Image, value: float) -> Image:
+        """ Augment image brightness """
+        hsv = np.array(image.HSV(), dtype = np.float32)
+
+        hsv[:, :, 1] = hsv[:, :, 1] * value
+        hsv[:, :, 2] = hsv[:, :, 2] * value
+
+        hsv = np.uint8(np.clip(hsv, 0, 255))
+
+        img = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+
+        image.update(img)
+
+        return image
 
     @randomness_decorator
     def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
@@ -101,16 +120,10 @@ class RandomBrightness(Augmentor):
         """
         value = 1 + np.random.uniform(-self._delta, self._delta) / 255
 
-        hsv = np.array(image.HSV(), dtype = np.float32)
+        image = self.augment(image, value)
 
-        hsv[:, :, 1] = hsv[:, :, 1] * value
-        hsv[:, :, 2] = hsv[:, :, 2] * value
-
-        hsv = np.uint8(np.clip(hsv, 0, 255))
-
-        img = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-
-        image.update(img)
+        if self._augment_annotation and isinstance(annotation, Image):
+            annotation = self.augment(annotation, value)
 
         return image, annotation
 
@@ -123,6 +136,7 @@ class RandomRotate(Augmentor):
         angle: typing.Union[int, typing.List]=30, 
         borderValue: typing.Tuple[int, int, int]=None,
         log_level: int = logging.INFO,
+        augment_annotation: bool = True
         ) -> None:
         """ Randomly rotate image 
 
@@ -131,8 +145,9 @@ class RandomRotate(Augmentor):
             angle (int, list): Integer value or list of integer values for image rotation
             borderValue (tuple): Tuple of 3 integers, setting border color for image rotation
             log_level (int): Log level for the augmentor. Defaults to logging.INFO.
+            augment_annotation (bool): If True, the annotation will be adjusted as well. Defaults to True.
         """
-        super(RandomRotate, self).__init__(random_chance, log_level)
+        super(RandomRotate, self).__init__(random_chance, log_level, augment_annotation)
 
         self._angle = angle
         self._borderValue = borderValue
@@ -149,7 +164,7 @@ class RandomRotate(Augmentor):
             image (Image): Adjusted image
             annotation (typing.Any): Adjusted annotation
         """
-        # check if angle is list of angles or signle angle value
+        # check if angle is list of angles or a single angle value
         if isinstance(self._angle, list):
             angle = float(np.random.choice(self._angle))
         else:
@@ -180,7 +195,7 @@ class RandomRotate(Augmentor):
         # perform the actual rotation and return the image
         img = cv2.warpAffine(image.numpy(), M, (nW, nH), borderValue=borderValue)
 
-        if isinstance(annotation, Image):
+        if self._augment_annotation and isinstance(annotation, Image):
             annotation_warp = cv2.warpAffine(annotation.numpy(), M, (nW, nH), borderValue=(0, 0, 0))
             annotation.update(annotation_warp)
 
@@ -196,6 +211,7 @@ class RandomErodeDilate(Augmentor):
         random_chance: float = 0.5,
         kernel_size: typing.Tuple[int, int]=(1, 1), 
         log_level: int = logging.INFO,
+        augment_annotation: bool = False,
         ) -> None:
         """ Randomly erode and dilate image
         
@@ -203,9 +219,21 @@ class RandomErodeDilate(Augmentor):
             random_chance (float): Float between 0.0 and 1.0 setting bounds for random probability. Defaults to 0.5.
             kernel_size (tuple): Tuple of 2 integers, setting kernel size for erosion and dilation
             log_level (int): Log level for the augmentor. Defaults to logging.INFO.
+            augment_annotation (bool): Boolean value to determine if annotation should be adjusted. Defaults to False.
         """
-        super(RandomErodeDilate, self).__init__(random_chance, log_level)
+        super(RandomErodeDilate, self).__init__(random_chance, log_level, augment_annotation)
         self._kernel_size = kernel_size
+        self.kernel = np.ones(self._kernel_size, np.uint8)
+
+    def augment(self, image: Image) -> Image:
+        if np.random.rand() <= 0.5:
+            img = cv2.erode(image.numpy(), self.kernel, iterations=1)
+        else:
+            img = cv2.dilate(image.numpy(), self.kernel, iterations=1)
+
+        image.update(img)
+
+        return image
 
     @randomness_decorator
     def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
@@ -219,14 +247,10 @@ class RandomErodeDilate(Augmentor):
             image (Image): Eroded and dilated image
             annotation (typing.Any): Adjusted annotation if necessary
         """
-        kernel = np.ones(self._kernel_size, np.uint8)
+        image = self.augment(image)
 
-        if np.random.rand() <= 0.5:
-            img = cv2.erode(image.numpy(), kernel, iterations=1)
-        else:
-            img = cv2.dilate(image.numpy(), kernel, iterations=1)
-
-        image.update(img)
+        if self._augment_annotation and isinstance(annotation, Image):
+            annotation = self.augment(annotation)
 
         return image, annotation
 
@@ -241,6 +265,7 @@ class RandomSharpen(Augmentor):
         kernel: np.ndarray = None,
         kernel_anchor: np.ndarray = None,
         log_level: int = logging.INFO,
+        augment_annotation: bool = False,
         ) -> None:
         """ Randomly sharpen image
         
@@ -251,8 +276,9 @@ class RandomSharpen(Augmentor):
             kernel (np.ndarray): Numpy array of kernel for image convolution
             kernel_anchor (np.ndarray): Numpy array of kernel anchor for image convolution
             log_level (int): Log level for the augmentor. Defaults to logging.INFO.
+            augment_annotation (bool): Boolean to determine if annotation should be augmented. Defaults to False.
         """
-        super(RandomSharpen, self).__init__(random_chance, log_level)
+        super(RandomSharpen, self).__init__(random_chance, log_level, augment_annotation)
 
         self._alpha_range = (alpha, 1.0)
         self._ligtness_range = lightness_range
@@ -263,18 +289,7 @@ class RandomSharpen(Augmentor):
 
         assert 0 <= alpha <= 1.0, "Alpha must be between 0.0 and 1.0"
 
-    @randomness_decorator
-    def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
-        """ Randomly sharpen image
-
-        Args:
-            image (Image): Image to be sharpened
-            annotation (typing.Any): Annotation to be adjusted
-
-        Returns:
-            image (Image): Sharpened image
-            annotation (typing.Any): Adjusted annotation if necessary
-        """
+    def augment(self, image: Image) -> Image:
         lightness = np.random.uniform(*self._ligtness_range)
         alpha = np.random.uniform(*self._alpha_range)
 
@@ -291,6 +306,25 @@ class RandomSharpen(Augmentor):
         # Merge the sharpened channels back into the original image
         image.update(cv2.merge([r_sharp, g_sharp, b_sharp]))
 
+        return image
+
+    @randomness_decorator
+    def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
+        """ Randomly sharpen image
+
+        Args:
+            image (Image): Image to be sharpened
+            annotation (typing.Any): Annotation to be adjusted
+
+        Returns:
+            image (Image): Sharpened image
+            annotation (typing.Any): Adjusted annotation if necessary
+        """
+        image = self.augment(image)
+
+        if self._augment_annotation and isinstance(annotation, Image):
+            annotation = self.augment(annotation)
+
         return image, annotation
     
 
@@ -301,6 +335,7 @@ class RandomGaussianBlur(Augmentor):
         random_chance: float = 0.5,
         log_level: int = logging.INFO,
         sigma: typing.Union[int, float] = 0.5,
+        augment_annotation: bool = False,
         ) -> None:
         """ Randomly erode and dilate image
         
@@ -309,8 +344,15 @@ class RandomGaussianBlur(Augmentor):
             log_level (int): Log level for the augmentor. Defaults to logging.INFO.
             sigma (int, float): standard deviation of the Gaussian kernel
         """
-        super(RandomGaussianBlur, self).__init__(random_chance, log_level)
+        super(RandomGaussianBlur, self).__init__(random_chance, log_level, augment_annotation)
         self.sigma = sigma
+
+    def augment(self, image: Image) -> Image:
+        img = cv2.GaussianBlur(image.numpy(), (0, 0), self.sigma)
+
+        image.update(img)
+
+        return image
 
     @randomness_decorator
     def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
@@ -324,9 +366,10 @@ class RandomGaussianBlur(Augmentor):
             image (Image): Blurred image
             annotation (typing.Any): Blurred annotation if necessary
         """
-        img = cv2.GaussianBlur(image.numpy(), (0, 0), self.sigma)
+        image = self.augment(image)
 
-        image.update(img)
+        if self._augment_annotation and isinstance(annotation, Image):
+            annotation = self.augment(annotation)
 
         return image, annotation
     
@@ -339,6 +382,7 @@ class RandomSaltAndPepper(Augmentor):
         log_level: int = logging.INFO,
         salt_vs_pepper: float = 0.5,
         amount: float = 0.1,
+        augment_annotation: bool = False,
         ) -> None:
         """ Randomly add Salt and Pepper noise to image
         
@@ -347,26 +391,16 @@ class RandomSaltAndPepper(Augmentor):
             log_level (int): Log level for the augmentor. Defaults to logging.INFO.
             salt_vs_pepper (float): ratio of salt vs pepper. Defaults to 0.5.
             amount (float): proportion of the image to be salted and peppered. Defaults to 0.1.
+            augment_annotation (bool): Whether to augment the annotation. Defaults to False.
         """
-        super(RandomSaltAndPepper, self).__init__(random_chance, log_level)
+        super(RandomSaltAndPepper, self).__init__(random_chance, log_level, augment_annotation)
         self.salt_vs_pepper = salt_vs_pepper
         self.amount = amount
         
         assert 0 <= salt_vs_pepper <= 1.0, "salt_vs_pepper must be between 0.0 and 1.0"
         assert 0 <= amount <= 1.0, "amount must be between 0.0 and 1.0"
 
-    @randomness_decorator
-    def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
-        """ Randomly add salt and pepper noise to an image
-
-        Args:
-            image (Image): Image to be noised
-            annotation (typing.Any): Annotation to be noised
-
-        Returns:
-            image (Image): Noised image
-            annotation (typing.Any): Noised annotation if necessary
-        """
+    def augment(self, image: Image) -> Image:
         img = image.numpy()
         height, width, channels = img.shape
 
@@ -384,6 +418,25 @@ class RandomSaltAndPepper(Augmentor):
 
         image.update(img)
 
+        return image
+
+    @randomness_decorator
+    def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
+        """ Randomly add salt and pepper noise to an image
+
+        Args:
+            image (Image): Image to be noised
+            annotation (typing.Any): Annotation to be noised
+
+        Returns:
+            image (Image): Noised image
+            annotation (typing.Any): Noised annotation if necessary
+        """
+        image = self.augment(image)
+
+        if self._augment_annotation and isinstance(annotation, Image):
+            annotation = self.augment(annotation)
+
         return image, annotation
     
 
@@ -393,14 +446,16 @@ class RandomMirror(Augmentor):
         self, 
         random_chance: float = 0.5,
         log_level: int = logging.INFO,
+        augment_annotation: bool = False,
         ) -> None:
         """ Randomly mirror image
         
         Args:
             random_chance (float): Float between 0.0 and 1.0 setting bounds for random probability. Defaults to 0.5.
             log_level (int): Log level for the augmentor. Defaults to logging.INFO.
+            augment_annotation (bool): Whether to augment the annotation. Defaults to False.
         """
-        super(RandomMirror, self).__init__(random_chance, log_level)
+        super(RandomMirror, self).__init__(random_chance, log_level, augment_annotation)
 
     @randomness_decorator
     def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
@@ -415,7 +470,7 @@ class RandomMirror(Augmentor):
             annotation (typing.Any): Mirrored annotation if necessary
         """
         image = image.flip(0)
-        if isinstance(annotation, Image):
+        if self._augment_annotation and isinstance(annotation, Image):
             annotation = annotation.flip(0)
 
         return image, annotation
@@ -427,14 +482,16 @@ class RandomFlip(Augmentor):
         self, 
         random_chance: float = 0.5,
         log_level: int = logging.INFO,
+        augment_annotation: bool = False,
         ) -> None:
         """ Randomly mirror image
         
         Args:
             random_chance (float): Float between 0.0 and 1.0 setting bounds for random probability. Defaults to 0.5.
             log_level (int): Log level for the augmentor. Defaults to logging.INFO.
+            augment_annotation (bool): Whether to augment the annotation. Defaults to False.
         """
-        super(RandomFlip, self).__init__(random_chance, log_level)
+        super(RandomFlip, self).__init__(random_chance, log_level, augment_annotation)
 
     @randomness_decorator
     def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
@@ -449,7 +506,7 @@ class RandomFlip(Augmentor):
             annotation (typing.Any): Flipped annotation if necessary
         """
         image = image.flip(1)
-        if isinstance(annotation, Image):
+        if self._augment_annotation and isinstance(annotation, Image):
             annotation = annotation.flip(1)
 
         return image, annotation
