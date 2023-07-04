@@ -152,6 +152,32 @@ class RandomRotate(Augmentor):
         self._angle = angle
         self._borderValue = borderValue
 
+    @staticmethod
+    def rotate_image(image: np.ndarray, angle: typing.Union[float, int], borderValue: tuple=(0,0,0)) -> np.ndarray:
+        # grab the dimensions of the image and then determine the centre
+        height, width = image.shape[:2]
+        center_x, center_y = (width // 2, height // 2)
+
+        # grab the rotation matrix (applying the negative of the
+        # angle to rotate clockwise), then grab the sine and cosine
+        # (i.e., the rotation components of the matrix)
+        M = cv2.getRotationMatrix2D((center_x, center_y), angle, 1.0)
+        cos = np.abs(M[0, 0])
+        sin = np.abs(M[0, 1])
+
+        # compute the new bounding dimensions of the image
+        nW = int((height * sin) + (width * cos))
+        nH = int((height * cos) + (width * sin))
+
+        # adjust the rotation matrix to take into account translation
+        M[0, 2] += (nW / 2) - center_x
+        M[1, 2] += (nH / 2) - center_y
+
+        # perform the actual rotation and return the image
+        img = cv2.warpAffine(image, M, (nW, nH), borderValue=borderValue)
+
+        return img
+
     @randomness_decorator
     def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
         """ Randomly rotate image
@@ -174,30 +200,12 @@ class RandomRotate(Augmentor):
         borderValue = np.random.randint(0, 255, 3) if self._borderValue is None else self._borderValue
         borderValue = [int(v) for v in borderValue]
 
-        # grab the dimensions of the image and then determine the centre
-        center_x, center_y = image.center
-
-        # grab the rotation matrix (applying the negative of the
-        # angle to rotate clockwise), then grab the sine and cosine
-        # (i.e., the rotation components of the matrix)
-        M = cv2.getRotationMatrix2D((center_x, center_y), angle, 1.0)
-        cos = np.abs(M[0, 0])
-        sin = np.abs(M[0, 1])
-
-        # compute the new bounding dimensions of the image
-        nW = int((image.height * sin) + (image.width * cos))
-        nH = int((image.height * cos) + (image.width * sin))
-
-        # adjust the rotation matrix to take into account translation
-        M[0, 2] += (nW / 2) - center_x
-        M[1, 2] += (nH / 2) - center_y
-
-        # perform the actual rotation and return the image
-        img = cv2.warpAffine(image.numpy(), M, (nW, nH), borderValue=borderValue)
+        img = self.rotate_image(image.numpy(), angle, borderValue)
 
         if self._augment_annotation and isinstance(annotation, Image):
-            annotation_warp = cv2.warpAffine(annotation.numpy(), M, (nW, nH), borderValue=(0, 0, 0))
-            annotation.update(annotation_warp)
+            # perform the actual rotation and return the annotation image
+            annotation_image = self.rotate_image(annotation.numpy(), angle, borderValue=(0, 0, 0))
+            annotation.update(annotation_image)
 
         image.update(img)
 
