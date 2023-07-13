@@ -21,6 +21,7 @@ class DataProvider:
             initial_epoch: int = 1,
             augmentors: typing.List[Augmentor] = None,
             transformers: typing.List[Transformer] = None,
+            batch_postprocessors: typing.List[typing.Callable] = None,
             skip_validation: bool = True,
             limit: int = None,
             use_cache: bool = False,
@@ -36,6 +37,7 @@ class DataProvider:
             initial_epoch (int): The initial epoch. Defaults to 1.
             augmentors (list, optional): List of augmentor functions. Defaults to None.
             transformers (list, optional): List of transformer functions. Defaults to None.
+            batch_postprocessors (list, optional): List of batch postprocessor functions. Defaults to None.
             skip_validation (bool, optional): Whether to skip validation. Defaults to True.
             limit (int, optional): Limit the number of samples in the dataset. Defaults to None.
             use_cache (bool, optional): Whether to cache the dataset. Defaults to False.
@@ -48,6 +50,7 @@ class DataProvider:
         self._epoch = initial_epoch
         self._augmentors = [] if augmentors is None else augmentors
         self._transformers = [] if transformers is None else transformers
+        self._batch_postprocessors = [] if batch_postprocessors is None else batch_postprocessors
         self._skip_validation = skip_validation
         self._limit = limit
         self._use_cache = use_cache
@@ -228,14 +231,20 @@ class DataProvider:
             for _object in objects:
                 data, annotation = _object(data, annotation)
 
-        # Convert to numpy array if not already
-        if not isinstance(data, np.ndarray):
+        try:
             data = data.numpy()
+            annotation = annotation.numpy()
+        except:
+            pass
 
         # Convert to numpy array if not already
-        # TODO: This is a hack, need to fix this
-        if not isinstance(annotation, (np.ndarray, int, float, str, np.uint8, float)):
-            annotation = annotation.numpy()
+        # if not isinstance(data, np.ndarray):
+        #     data = data.numpy()
+
+        # # Convert to numpy array if not already
+        # # TODO: This is a hack, need to fix this
+        # if not isinstance(annotation, (np.ndarray, int, float, str, np.uint8, float)):
+        #     annotation = annotation.numpy()
 
         return data, annotation
 
@@ -255,5 +264,11 @@ class DataProvider:
 
             batch_data.append(data)
             batch_annotations.append(annotation)
+
+        if self._batch_postprocessors is not None:
+            for batch_postprocessor in self._batch_postprocessors:
+                batch_data, batch_annotations = batch_postprocessor(batch_data, batch_annotations)
+
+            return batch_data, batch_annotations
 
         return np.array(batch_data), np.array(batch_annotations)

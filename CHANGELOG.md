@@ -1,3 +1,12 @@
+## [1.0.13] - 2022-07-13
+### Changed
+- Included `augment_annotation` bool option to all `mltu.augmentors` to be able to choose whether to augment annotation or not
+- Changed `mltu.augmentors.RandomRotate` to have `@staticmethod` of `rotate_image` to be able to use it without creating object
+
+### Added
+- Added `batch_postprocessor` option to `mltu.dataProvider.DataProvider` to be able to postprocess batch after augmentation
+
+
 ## [1.0.12] - 2022-06-08
 ### Changed
 - Moved `onnx` and `tf2onnx` import inside `mltu.tensorflow.callbacks.Model2onnx` to avoid import errors when not using this callback
