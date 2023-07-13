@@ -32,11 +32,15 @@ class OnnxInferenceModel:
 
         self.model = ort.InferenceSession(self.model_path, providers=providers)
 
-        self.metadata = self.model.get_modelmeta().custom_metadata_map
-        if self.metadata:
+        self.metadata = {}
+        if self.model.get_modelmeta().custom_metadata_map:
             # add metadata to self object
-            for key, value in self.metadata.items():
-                setattr(self, key, value) 
+            for key, value in self.model.get_modelmeta().custom_metadata_map.items():
+                try:
+                    new_value = eval(value) # in case the value is a list or dict
+                except:
+                    new_value = value
+                self.metadata[key] = new_value
                 
         # Update providers priority to only CPUExecutionProvider
         if self.force_cpu:

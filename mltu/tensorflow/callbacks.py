@@ -13,16 +13,24 @@ class Model2onnx(Callback):
     def __init__(
         self, 
         saved_model_path: str, 
-        metadata: dict=None
+        metadata: dict=None,
+        save_on_epoch_end: bool=False,
         ) -> None:
         """ Converts the model to onnx format after training is finished.
         Args:
             saved_model_path (str): Path to the saved .h5 model.
             metadata (dict, optional): Dictionary containing metadata to be added to the onnx model. Defaults to None.
+            save_on_epoch_end (bool, optional): Save the onnx model on every epoch end. Defaults to False.
         """
         super().__init__()
         self.saved_model_path = saved_model_path
         self.metadata = metadata
+        self.save_on_epoch_end = save_on_epoch_end
+
+    def on_epoch_end(self, epoch: int, logs: dict=None):
+        """ Converts the model to onnx format on every epoch end. """
+        if self.save_on_epoch_end:
+            self.on_train_end(logs=logs)
 
     def on_train_end(self, logs=None):
         """ Converts the model to onnx format after training is finished. """
@@ -41,7 +49,7 @@ class Model2onnx(Callback):
                 for key, value in self.metadata.items():
                     meta = onnx_model.metadata_props.add()
                     meta.key = key
-                    meta.value = value
+                    meta.value = str(value)
 
                 # Save the modified ONNX model
                 self.onnx.save(onnx_model, self.onnx_model_path)
