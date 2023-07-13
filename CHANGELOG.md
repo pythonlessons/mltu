@@ -1,10 +1,14 @@
-## [1.0.13] - 2022-07-13
+## [1.0.14] - 2022-07-13
 ### Changed
 - Included `augment_annotation` bool option to all `mltu.augmentors` to be able to choose whether to augment annotation or not
 - Changed `mltu.augmentors.RandomRotate` to have `@staticmethod` of `rotate_image` to be able to use it without creating object
 
 ### Added
 - Added `batch_postprocessor` option to `mltu.dataProvider.DataProvider` to be able to postprocess batch after augmentation
+
+
+## [1.0.13] - 2022-07-13
+- Removed because of bad build
 
 
 ## [1.0.12] - 2022-06-08
