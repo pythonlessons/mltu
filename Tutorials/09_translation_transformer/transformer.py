@@ -143,7 +143,7 @@ class GlobalSelfAttention(BaseAttention):
     Methods:
         call: Performs the forward pass of the layer.
 
-    Attributes:+
+    Attributes:
         mha (tf.keras.layers.MultiHeadAttention): The MultiHeadAttention layer.
         layernorm (tf.keras.layers.LayerNormalization): The LayerNormalization layer.
         add (tf.keras.layers.Add): The Add layer.
@@ -165,7 +165,28 @@ class GlobalSelfAttention(BaseAttention):
 
 
 class CausalSelfAttention(BaseAttention):
-    def call(self, x):
+    """
+    Call self attention on the input sequence, ensuring that each position in the 
+    output depends only on previous positions (i.e. a causal model).
+
+    Methods:
+        call: Performs the forward pass of the layer.
+
+    Attributes:
+        mha (tf.keras.layers.MultiHeadAttention): The MultiHeadAttention layer.
+        layernorm (tf.keras.layers.LayerNormalization): The LayerNormalization layer.
+        add (tf.keras.layers.Add): The Add layer.
+    """
+    def call(self, x: tf.Tensor) -> tf.Tensor:
+        """
+        The call function that performs the causal self-attention operation.
+        
+        Args:
+            x (tf.Tensor): The input sequence of shape (batch_size, seq_length, d_model).
+
+        Returns:
+            tf.Tensor: The output sequence of shape (batch_size, seq_length, d_model).
+        """
         attn_output = self.mha(query=x, value=x, key=x, use_causal_mask = True)
         x = self.add([x, attn_output])
         x = self.layernorm(x)
@@ -173,7 +194,26 @@ class CausalSelfAttention(BaseAttention):
 
 
 class FeedForward(tf.keras.layers.Layer):
-    def __init__(self, d_model, dff, dropout_rate=0.1):
+    """
+    A class that implements the feed-forward layer.
+
+    Methods:
+        call: Performs the forward pass of the layer.
+
+    Attributes:
+        seq (tf.keras.Sequential): The sequential layer that contains the feed-forward layers. It applies the two feed-forward layers and the dropout layer.
+        add (tf.keras.layers.Add): The Add layer.
+        layer_norm (tf.keras.layers.LayerNormalization): The LayerNormalization layer.
+    """
+    def __init__(self, d_model: int, dff: int, dropout_rate: float=0.1):
+        """
+        Constructor of the FeedForward layer.
+
+        Args:
+            d_model (int): The dimensionality of the model.
+            dff (int): The dimensionality of the feed-forward layer.
+            dropout_rate (float): The dropout rate.
+        """
         super().__init__()
         self.seq = tf.keras.Sequential([
             tf.keras.layers.Dense(dff, activation='relu'),
@@ -183,14 +223,42 @@ class FeedForward(tf.keras.layers.Layer):
         self.add = tf.keras.layers.Add()
         self.layer_norm = tf.keras.layers.LayerNormalization()
 
-    def call(self, x):
+    def call(self, x: tf.Tensor) -> tf.Tensor:
+        """
+        The call function that performs the feed-forward operation. 
+
+        Args:
+            x (tf.Tensor): The input sequence of shape (batch_size, seq_length, d_model).
+
+        Returns:
+            tf.Tensor: The output sequence of shape (batch_size, seq_length, d_model).
+        """
         x = self.add([x, self.seq(x)])
         x = self.layer_norm(x) 
         return x
 
 
 class EncoderLayer(tf.keras.layers.Layer):
-    def __init__(self,*, d_model, num_heads, dff, dropout_rate=0.1):
+    """
+    A single layer of the Encoder. Usually there are multiple layers stacked on top of each other.
+
+    Methods:
+        call: Performs the forward pass of the layer.
+
+    Attributes:
+        self_attention (GlobalSelfAttention): The global self-attention layer.
+        ffn (FeedForward): The feed-forward layer.
+    """
+    def __init__(self, d_model: int, num_heads: int, dff: int, dropout_rate: float=0.1):
+        """
+        Constructor of the EncoderLayer.
+
+        Args:
+            d_model (int): The dimensionality of the model.
+            num_heads (int): The number of heads in the multi-head attention layer.
+            dff (int): The dimensionality of the feed-forward layer.
+            dropout_rate (float): The dropout rate.
+        """
         super().__init__()
 
         self.self_attention = GlobalSelfAttention(
@@ -201,7 +269,16 @@ class EncoderLayer(tf.keras.layers.Layer):
 
         self.ffn = FeedForward(d_model, dff)
 
-    def call(self, x):
+    def call(self, x: tf.Tensor) -> tf.Tensor:
+        """
+        The call function that performs the forward pass of the layer.
+
+        Args:
+            x (tf.Tensor): The input sequence of shape (batch_size, seq_length, d_model).
+
+        Returns:
+            tf.Tensor: The output sequence of shape (batch_size, seq_length, d_model).
+        """
         x = self.self_attention(x)
         x = self.ffn(x)
         return x
