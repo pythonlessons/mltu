@@ -1,3 +1,8 @@
+## [1.0.15] - 2022-07-15
+### Changed
+- Fixed bug in `mltu.dataProvider.DataProvider` to work with `batch_postprocessors`.
+
+
 ## [1.0.14] - 2022-07-13
 ### Changed
 - Included `augment_annotation` bool option to all `mltu.augmentors` to be able to choose whether to augment annotation or not
