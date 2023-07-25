@@ -14,7 +14,8 @@ class OnnxInferenceModel:
         self, 
         model_path: str = "",
         force_cpu: bool = False,
-        default_model_name: str = "model.onnx"
+        default_model_name: str = "model.onnx",
+        *args, **kwargs
         ):
         
         self.model_path = model_path

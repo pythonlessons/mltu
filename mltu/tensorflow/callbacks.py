@@ -1,14 +1,10 @@
 import os
+import tensorflow as tf
 from keras.callbacks import Callback
 
 import logging
 
 class Model2onnx(Callback):
-
-    # import onnx and use as global
-    import onnx
-    import tf2onnx
-
     """ Converts the model to onnx format after training is finished. """
     def __init__(
         self, 
@@ -27,6 +23,38 @@ class Model2onnx(Callback):
         self.metadata = metadata
         self.save_on_epoch_end = save_on_epoch_end
 
+    @staticmethod
+    def model2onnx(model: tf.keras.Model, onnx_model_path: str):
+        try:
+            import tf2onnx
+
+            # convert the model to onnx format
+            tf2onnx.convert.from_keras(model, output_path=onnx_model_path)
+
+        except Exception as e:
+            print(e)
+
+    @staticmethod
+    def include_metadata(onnx_model_path: str, metadata: dict=None):
+        try:
+            if metadata and isinstance(metadata, dict):
+
+                import onnx
+                # Load the ONNX model
+                onnx_model = onnx.load(onnx_model_path)
+
+                # Add the metadata dictionary to the model's metadata_props attribute
+                for key, value in metadata.items():
+                    meta = onnx_model.metadata_props.add()
+                    meta.key = key
+                    meta.value = str(value)
+
+                # Save the modified ONNX model
+                onnx.save(onnx_model, onnx_model_path)
+
+        except Exception as e:
+            print(e)  
+
     def on_epoch_end(self, epoch: int, logs: dict=None):
         """ Converts the model to onnx format on every epoch end. """
         if self.save_on_epoch_end:
@@ -34,28 +62,10 @@ class Model2onnx(Callback):
 
     def on_train_end(self, logs=None):
         """ Converts the model to onnx format after training is finished. """
-        try:
-            # import onnx
-            # import tf2onnx
-            self.model.load_weights(self.saved_model_path)
-            self.onnx_model_path = self.saved_model_path.replace(".h5", ".onnx")
-            self.tf2onnx.convert.from_keras(self.model, output_path=self.onnx_model_path)
-
-            if self.metadata and isinstance(self.metadata, dict):
-                # Load the ONNX model
-                onnx_model = self.onnx.load(self.onnx_model_path)
-
-                # Add the metadata dictionary to the model's metadata_props attribute
-                for key, value in self.metadata.items():
-                    meta = onnx_model.metadata_props.add()
-                    meta.key = key
-                    meta.value = str(value)
-
-                # Save the modified ONNX model
-                self.onnx.save(onnx_model, self.onnx_model_path)
-
-        except Exception as e:
-            print(e)
+        self.model.load_weights(self.saved_model_path)
+        onnx_model_path = self.saved_model_path.replace(".h5", ".onnx")
+        self.model2onnx(self.model, onnx_model_path)
+        self.include_metadata(onnx_model_path, self.metadata)
 
 
 class TrainLogger(Callback):

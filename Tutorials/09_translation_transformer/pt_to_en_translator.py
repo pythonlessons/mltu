@@ -1,6 +1,5 @@
 import numpy as np
 
-import tensorflow_datasets as tfds
 import tensorflow as tf
 try: [tf.config.experimental.set_memory_growth(gpu, True) for gpu in tf.config.experimental.list_physical_devices("GPU")]
 except: pass
@@ -11,12 +10,16 @@ from mltu.tensorflow.callbacks import Model2onnx
 from mltu.tensorflow.dataProvider import DataProvider
 from mltu.tokenizers import CustomTokenizer
 
-# from transformer import Transformer, TransformerLayer
+from mltu.tensorflow.transformer.utils import MaskedAccuracy, MaskedLoss
+from mltu.tensorflow.transformer.callbacks import EncDecSplitCallback
+from mltu.tensorflow.schedules import CustomSchedule
+
 from model import Transformer
 from configs import ModelConfigs
 
 configs = ModelConfigs()
 
+# Path to dataset
 en_training_data_path = "Datasets/en-es/opus.en-es-train.en"
 en_validation_data_path = "Datasets/en-es/opus.en-es-dev.en"
 es_training_data_path = "Datasets/en-es/opus.en-es-train.es"
@@ -32,6 +35,7 @@ en_validation_data = read_files(en_validation_data_path)
 es_training_data = read_files(es_training_data_path)
 es_validation_data = read_files(es_validation_data_path)
 
+# Consider only sentences with length <= 500
 max_lenght = 500
 train_dataset = [[es_sentence, en_sentence] for es_sentence, en_sentence in zip(es_training_data, en_training_data) if len(es_sentence) <= max_lenght and len(en_sentence) <= max_lenght]
 val_dataset = [[es_sentence, en_sentence] for es_sentence, en_sentence in zip(es_validation_data, en_validation_data) if len(es_sentence) <= max_lenght and len(en_sentence) <= max_lenght]
@@ -39,39 +43,14 @@ es_training_data, en_training_data = zip(*train_dataset)
 es_validation_data, en_validation_data = zip(*val_dataset)
 
 # prepare portuguese tokenizer, this is the input language
-tokenizer = CustomTokenizer()
+tokenizer = CustomTokenizer(char_level=True)
 tokenizer.fit_on_texts(es_training_data)
-tokenizer.update(es_validation_data)
+tokenizer.save(configs.model_path + "/tokenizer.json")
 
 # prepare english tokenizer, this is the output language
-detokenizer = CustomTokenizer()
+detokenizer = CustomTokenizer(char_level=True)
 detokenizer.fit_on_texts(en_training_data)
-detokenizer.update(en_validation_data)
-
-
-# examples, metadata = tfds.load('ted_hrlr_translate/pt_to_en', with_info=True, as_supervised=True)
-
-# train_examples, val_examples = examples['train'], examples['validation']
-
-# train_dataset = []
-# for pt, en in train_examples:
-#     train_dataset.append([pt.numpy().decode('utf-8'), en.numpy().decode('utf-8')])
-
-# val_dataset = []
-# for pt, en in val_examples:
-#     val_dataset.append([pt.numpy().decode('utf-8'), en.numpy().decode('utf-8')])
-
-# # prepare portuguese tokenizer
-# tokenizer = CustomTokenizer()
-# tokenizer.fit_on_texts([train_dataset[i][0] for i in range(len(train_dataset))])
-# tokenizer.update([val_dataset[i][0] for i in range(len(val_dataset))])
-# tokenizer.save(configs.model_path + "/pt_tokenizer.json")
-
-# # prepare english tokenizer
-# detokenizer = CustomTokenizer()
-# detokenizer.fit_on_texts([train_dataset[i][1] for i in range(len(train_dataset))])
-# detokenizer.update([val_dataset[i][1] for i in range(len(val_dataset))])
-# detokenizer.save(configs.model_path + "/eng_tokenizer.json")
+detokenizer.save(configs.model_path + "/detokenizer.json")
 
 
 def preprocess_inputs(data_batch, label_batch):
@@ -89,23 +68,23 @@ def preprocess_inputs(data_batch, label_batch):
 
     return (encoder_input, decoder_input), decoder_output
 
+# Create Training Data Provider
 train_dataProvider = DataProvider(
     train_dataset, 
     batch_size=configs.batch_size, 
-    shuffle=True,
-    batch_postprocessors=[preprocess_inputs]
+    batch_postprocessors=[preprocess_inputs],
+    use_cache=True
     )
 
-# for data in train_dataProvider:
-#     pass
-
+# Create Validation Data Provider
 val_dataProvider = DataProvider(
     val_dataset, 
     batch_size=configs.batch_size, 
-    shuffle=True,
-    batch_postprocessors=[preprocess_inputs]
+    batch_postprocessors=[preprocess_inputs],
+    use_cache=True
     )
 
+# Create TensorFlow Transformer Model
 transformer = Transformer(
     num_layers=configs.num_layers,
     d_model=configs.d_model,
@@ -120,97 +99,35 @@ transformer = Transformer(
 
 transformer.summary()
 
-# transformer(train_dataProvider[0][0], training=False)
-# transformer.load_weights("test/model.h5")
+# Define learning rate schedule
+learning_rate = CustomSchedule(
+    steps_per_epoch=len(train_dataProvider),
+    init_lr=configs.init_lr,
+    lr_after_warmup=configs.lr_after_warmup,
+    final_lr=configs.final_lr,
+    warmup_epochs=configs.warmup_epochs,
+    decay_epochs=configs.decay_epochs,
+)
 
-# test = transformer(data[0], training=False)
-# transformer.summary()
-
-
-class MaskedLoss(tf.keras.losses.Loss):
-    def __init__(self, mask_value=0, reduction='none') -> None:
-        super(MaskedLoss, self).__init__()
-        self.mask_value = mask_value
-        self.reduction = reduction
-        self.loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction=reduction)
-
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        mask = y_true != self.mask_value
-        loss = self.loss_object(y_true, y_pred)
-
-        mask = tf.cast(mask, dtype=loss.dtype)
-        loss *= mask
-
-        loss = tf.reduce_sum(loss) / tf.reduce_sum(mask)
-        return loss
-    
-def masked_accuracy(y_true, y_pred):
-    pred = tf.argmax(y_pred, axis=2)
-    label = tf.cast(y_true, pred.dtype)
-    match = label == pred
-
-    mask = label != 0
-
-    match = match & mask
-
-    match = tf.cast(match, dtype=tf.float32)
-    mask = tf.cast(mask, dtype=tf.float32)
-    return tf.reduce_sum(match) / tf.reduce_sum(mask)
-
-# vocabulary = tf.constant(eng_tokenizer.list())
-# vocabulary = tf.constant(list(self.vocab))
-# wer = WERMetric.get_wer(self.sen_true, self.sen_pred, vocabulary).numpy()
-
-# @tf.function
-# def wer(y_true, y_pred):
-#     pred = tf.argmax(y_pred, axis=2)
-#     label = tf.cast(y_true, pred.dtype)
-
-#     wer = WERMetric.get_wer(pred, label, vocabulary, padding=0, separator=" ")
-
-#     # pred_str = pt_tokenizer.detokenize(pred.numpy())
-#     # label_str = eng_tokenizer.detokenize(label.numpy())
-#     # wer = get_wer(pred_str, label_str)
-
-#     return wer
-
-class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
-    def __init__(self, d_model, warmup_steps=4000):
-        super().__init__()
-
-        self.d_model = d_model
-        self.warmup_steps = warmup_steps
-
-    def get_config(self):
-        return {"d_model": self.d_model, "warmup_steps": self.warmup_steps}
-
-    def __call__(self, step):
-        step = tf.cast(step, dtype=tf.float32)
-        arg1 = tf.math.rsqrt(step)
-        arg2 = step * (self.warmup_steps ** -1.5)
-
-        return tf.math.rsqrt(tf.cast(self.d_model, tf.float32)) * tf.math.minimum(arg1, arg2)
-
-learning_rate = CustomSchedule(configs.d_model)
 optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
 
-
+# Compile the model
 transformer.compile(
     loss=MaskedLoss(),
     optimizer=optimizer,
-    metrics=[masked_accuracy],
+    metrics=[MaskedAccuracy()],
     run_eagerly=False
     )
 
-
 # Define callbacks
-earlystopper = EarlyStopping(monitor="val_masked_accuracy", patience=10, verbose=1, mode="max")
+earlystopper = EarlyStopping(monitor="val_masked_accuracy", patience=5, verbose=1, mode="max")
 checkpoint = ModelCheckpoint(f"{configs.model_path}/model.h5", monitor="val_masked_accuracy", verbose=1, save_best_only=True, mode="max", save_weights_only=False)
 tb_callback = TensorBoard(f"{configs.model_path}/logs")
-reduceLROnPlat = ReduceLROnPlateau(monitor="val_masked_accuracy", factor=0.9, min_delta=1e-10, patience=5, verbose=1, mode="max")
-model2onnx = Model2onnx(f"{configs.model_path}/model.h5", metadata={"tokenizer": tokenizer.dict(), "detokenizer": detokenizer.dict()}, save_on_epoch_end=True)
+reduceLROnPlat = ReduceLROnPlateau(monitor="val_masked_accuracy", factor=0.9, min_delta=1e-10, patience=2, verbose=1, mode="max")
+model2onnx = Model2onnx(f"{configs.model_path}/model.h5", metadata={"tokenizer": tokenizer.dict(), "detokenizer": detokenizer.dict()}, save_on_epoch_end=False)
+encDecSplitCallback = EncDecSplitCallback(configs.model_path, encoder_metadata={"tokenizer": tokenizer.dict()}, decoder_metadata={"detokenizer": detokenizer.dict()})
 
-
+# Train the model
 transformer.fit(
     train_dataProvider, 
     validation_data=val_dataProvider, 
