@@ -136,6 +136,7 @@ transformer.fit(
         checkpoint, 
         tb_callback, 
         reduceLROnPlat,
-        model2onnx
+        model2onnx,
+        encDecSplitCallback
         ]
     )
