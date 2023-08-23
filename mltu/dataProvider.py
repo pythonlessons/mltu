@@ -264,7 +264,7 @@ class DataProvider:
             batch_data.append(data)
             batch_annotations.append(annotation)
 
-        if self._batch_postprocessors is not None:
+        if self._batch_postprocessors:
             for batch_postprocessor in self._batch_postprocessors:
                 batch_data, batch_annotations = batch_postprocessor(batch_data, batch_annotations)
 
