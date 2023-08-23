@@ -181,7 +181,8 @@ class CustomTokenizer:
         """
         serialised_dict = self.dict()
         if type == "json":
-            os.makedirs(os.path.dirname(path), exist_ok=True)
+            if os.path.dirname(path):
+                os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "w") as f:
                 json.dump(serialised_dict, f)
 

@@ -159,7 +159,7 @@ class SpectrogramPadding(Transformer):
         self.padding_value = padding_value
 
     def __call__(self, spectrogram: np.ndarray, label: np.ndarray):
-        padded_spectrogram = np.pad(spectrogram, ((self.max_spectrogram_length - spectrogram.shape[0], 0),(0,0)), mode="constant", constant_values=self.padding_value)
+        padded_spectrogram = np.pad(spectrogram, (0, (self.max_spectrogram_length - spectrogram.shape[0]),(0,0)), mode="constant", constant_values=self.padding_value)
 
         return padded_spectrogram, label
 

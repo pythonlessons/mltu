@@ -102,3 +102,47 @@ class TrainLogger(Callback):
         epoch_message = f"Epoch {epoch}; "
         logs_message = "; ".join([f"{key}: {value}" for key, value in logs.items()])
         self.logger.info(epoch_message + logs_message)
+
+
+class WarmupCosineDecay(Callback):
+    """ Cosine decay learning rate scheduler with warmup
+
+    Args:
+        lr_after_warmup (float): Learning rate after warmup
+        final_lr (float): Final learning rate
+        warmup_epochs (int): Number of warmup epochs
+        decay_epochs (int): Number of decay epochs
+        initial_lr (float, optional): Initial learning rate. Defaults to 0.0.
+        verbose (bool, optional): Whether to print learning rate. Defaults to False.
+    """
+    def __init__(
+            self, 
+            lr_after_warmup: float, 
+            final_lr: float, 
+            warmup_epochs: int, 
+            decay_epochs: int, 
+            initial_lr: float=0.0, 
+            verbose=False
+        ) -> None:
+        super(WarmupCosineDecay, self).__init__()
+        self.lr_after_warmup = lr_after_warmup
+        self.final_lr = final_lr
+        self.warmup_epochs = warmup_epochs
+        self.decay_epochs = decay_epochs
+        self.initial_lr = initial_lr
+        self.verbose = verbose
+
+    def on_epoch_begin(self, epoch: int, logs: dict=None):
+        """ Adjust learning rate at the beginning of each epoch """
+        if epoch < self.warmup_epochs:
+            lr = self.initial_lr + (self.lr_after_warmup - self.initial_lr) * (epoch + 1) / self.warmup_epochs
+        elif epoch < self.warmup_epochs + self.decay_epochs:
+            progress = (epoch - self.warmup_epochs) / self.decay_epochs
+            lr = self.final_lr + 0.5 * (self.lr_after_warmup - self.final_lr) * (1 + tf.cos(tf.constant(progress) * 3.14159))
+        else:
+            return None # No change to learning rate
+
+        tf.keras.backend.set_value(self.model.optimizer.lr, lr)
+        
+        if self.verbose:
+            print(f"Epoch {epoch + 1} - Learning Rate: {lr}")

@@ -5,14 +5,13 @@ try: [tf.config.experimental.set_memory_growth(gpu, True) for gpu in tf.config.e
 except: pass
 
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TensorBoard
-from mltu.tensorflow.callbacks import Model2onnx
+from mltu.tensorflow.callbacks import Model2onnx, WarmupCosineDecay
 
 from mltu.tensorflow.dataProvider import DataProvider
 from mltu.tokenizers import CustomTokenizer
 
 from mltu.tensorflow.transformer.utils import MaskedAccuracy, MaskedLoss
 from mltu.tensorflow.transformer.callbacks import EncDecSplitCallback
-from mltu.tensorflow.schedules import CustomSchedule
 
 from model import Transformer
 from configs import ModelConfigs
@@ -42,7 +41,7 @@ val_dataset = [[es_sentence, en_sentence] for es_sentence, en_sentence in zip(es
 es_training_data, en_training_data = zip(*train_dataset)
 es_validation_data, en_validation_data = zip(*val_dataset)
 
-# prepare portuguese tokenizer, this is the input language
+# prepare spanish tokenizer, this is the input language
 tokenizer = CustomTokenizer(char_level=True)
 tokenizer.fit_on_texts(es_training_data)
 tokenizer.save(configs.model_path + "/tokenizer.json")
@@ -99,17 +98,7 @@ transformer = Transformer(
 
 transformer.summary()
 
-# Define learning rate schedule
-learning_rate = CustomSchedule(
-    steps_per_epoch=len(train_dataProvider),
-    init_lr=configs.init_lr,
-    lr_after_warmup=configs.lr_after_warmup,
-    final_lr=configs.final_lr,
-    warmup_epochs=configs.warmup_epochs,
-    decay_epochs=configs.decay_epochs,
-)
-
-optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
+optimizer = tf.keras.optimizers.Adam(learning_rate=configs.init_lr, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
 
 # Compile the model
 transformer.compile(
@@ -120,6 +109,13 @@ transformer.compile(
     )
 
 # Define callbacks
+warmupCosineDecay = WarmupCosineDecay(
+    lr_after_warmup=configs.lr_after_warmup,
+    final_lr=configs.final_lr,
+    warmup_epochs=configs.warmup_epochs,
+    decay_epochs=configs.decay_epochs,
+    initial_lr=configs.init_lr,
+    )
 earlystopper = EarlyStopping(monitor="val_masked_accuracy", patience=5, verbose=1, mode="max")
 checkpoint = ModelCheckpoint(f"{configs.model_path}/model.h5", monitor="val_masked_accuracy", verbose=1, save_best_only=True, mode="max", save_weights_only=False)
 tb_callback = TensorBoard(f"{configs.model_path}/logs")

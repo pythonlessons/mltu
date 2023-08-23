@@ -204,6 +204,14 @@ class Encoder(tf.keras.layers.Layer):
             for _ in range(num_layers)]
         self.dropout = tf.keras.layers.Dropout(dropout_rate)
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'd_model': self.d_model,
+            'num_layers': self.num_layers,
+        })
+        return config
+
     def call(self, x: tf.Tensor) -> tf.Tensor:
         """
         The call function that performs the forward pass of the layer.
@@ -322,6 +330,14 @@ class Decoder(tf.keras.layers.Layer):
                 dropout_rate=dropout_rate) for _ in range(num_layers)]
 
         self.last_attn_scores = None
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'd_model': self.d_model,
+            'num_layers': self.num_layers,
+        })
+        return config
 
     def call(self, x: tf.Tensor, context: tf.Tensor) -> tf.Tensor:
         """
