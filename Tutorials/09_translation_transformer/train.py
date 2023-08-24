@@ -72,7 +72,7 @@ train_dataProvider = DataProvider(
     train_dataset, 
     batch_size=configs.batch_size, 
     batch_postprocessors=[preprocess_inputs],
-    use_cache=True
+    use_cache=True,
     )
 
 # Create Validation Data Provider
@@ -80,7 +80,7 @@ val_dataProvider = DataProvider(
     val_dataset, 
     batch_size=configs.batch_size, 
     batch_postprocessors=[preprocess_inputs],
-    use_cache=True
+    use_cache=True,
     )
 
 # Create TensorFlow Transformer Model
@@ -129,6 +129,7 @@ transformer.fit(
     validation_data=val_dataProvider, 
     epochs=configs.train_epochs,
     callbacks=[
+        warmupCosineDecay,
         checkpoint, 
         tb_callback, 
         reduceLROnPlat,

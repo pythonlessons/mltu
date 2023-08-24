@@ -134,15 +134,25 @@ class WarmupCosineDecay(Callback):
 
     def on_epoch_begin(self, epoch: int, logs: dict=None):
         """ Adjust learning rate at the beginning of each epoch """
+
+        if epoch >= self.warmup_epochs + self.decay_epochs:
+            return logs
+
         if epoch < self.warmup_epochs:
             lr = self.initial_lr + (self.lr_after_warmup - self.initial_lr) * (epoch + 1) / self.warmup_epochs
-        elif epoch < self.warmup_epochs + self.decay_epochs:
+        else:
             progress = (epoch - self.warmup_epochs) / self.decay_epochs
             lr = self.final_lr + 0.5 * (self.lr_after_warmup - self.final_lr) * (1 + tf.cos(tf.constant(progress) * 3.14159))
-        else:
-            return None # No change to learning rate
 
         tf.keras.backend.set_value(self.model.optimizer.lr, lr)
         
         if self.verbose:
             print(f"Epoch {epoch + 1} - Learning Rate: {lr}")
+    
+    def on_epoch_end(self, epoch: int, logs: dict=None):
+        logs = logs or {}
+        
+        # Log the learning rate value
+        logs["lr"] = self.model.optimizer.lr
+        
+        return logs

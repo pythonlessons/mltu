@@ -77,28 +77,3 @@ class MaskedAccuracy(tf.keras.metrics.Metric):
             tf.Tensor: Masked accuracy.
         """
         return self.total / self.count
-
-
-# def masked_accuracy(y_true: tf.Tensor, y_pred: tf.Tensor):
-#     """ Calculate masked accuracy.
-
-#     Args:
-#         y_true (tf.Tensor): True labels.
-#         y_pred (tf.Tensor): Predicted labels.
-
-#     Returns:
-#         tf.Tensor: Masked accuracy.
-#     """
-#     pred = tf.argmax(y_pred, axis=2)
-#     label = tf.cast(y_true, pred.dtype)
-#     match = label == pred
-
-#     mask = label != 0
-
-#     match = match & mask
-
-#     match = tf.cast(match, dtype=tf.float32)
-#     mask = tf.cast(mask, dtype=tf.float32)
-#     accuracy = tf.reduce_sum(match) / tf.reduce_sum(mask)
-
-#     return accuracy
