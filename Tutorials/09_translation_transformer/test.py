@@ -1,10 +1,7 @@
-from mltu.inferenceModel import OnnxInferenceModel
-import tensorflow as tf
-try: [tf.config.experimental.set_memory_growth(gpu, True) for gpu in tf.config.experimental.list_physical_devices("GPU")]
-except: pass
 import numpy as np
 
 from mltu.tokenizers import CustomTokenizer
+from mltu.inferenceModel import OnnxInferenceModel
 
 class PtEnTranslator(OnnxInferenceModel):
     def __init__(self, *args, **kwargs):
@@ -13,8 +10,6 @@ class PtEnTranslator(OnnxInferenceModel):
         self.new_inputs = self.model.get_inputs()
         self.tokenizer = CustomTokenizer.load(self.metadata["tokenizer"])
         self.detokenizer = CustomTokenizer.load(self.metadata["detokenizer"])
-        # self.eng_tokenizer = CustomTokenizer.load("Tutorials/09_transformers/eng_tokenizer.json")
-        # self.pt_tokenizer = CustomTokenizer.load("Tutorials/09_transformers/pt_tokenizer.json")  
 
     def predict(self, sentence):
         tokenized_sentence = self.tokenizer.texts_to_sequences([sentence])[0]
@@ -53,14 +48,8 @@ es_validation_data = read_files(es_validation_data_path)
 # Consider only sentences with length <= 500
 max_lenght = 500
 val_examples = [[es_sentence, en_sentence] for es_sentence, en_sentence in zip(es_validation_data, en_validation_data) if len(es_sentence) <= max_lenght and len(en_sentence) <= max_lenght]
-# es_validation_data, en_validation_data = zip(*val_dataset)
-
-
-
-
 
 translator = PtEnTranslator("Models/09_translation_transformer/202307241748/model.onnx")
-
 
 val_dataset = []
 for es, en in val_examples:
@@ -68,4 +57,3 @@ for es, en in val_examples:
     print(en)
     print(results)
     print()
-    # val_dataset.append([pt.numpy().decode('utf-8'), en.numpy().decode('utf-8')])
