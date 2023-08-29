@@ -37,6 +37,7 @@ class DataProvider:
             initial_epoch (int): The initial epoch. Defaults to 1.
             augmentors (list, optional): List of augmentor functions. Defaults to None.
             transformers (list, optional): List of transformer functions. Defaults to None.
+            batch_postprocessors (list, optional): List of batch postprocessor functions. Defaults to None.
             skip_validation (bool, optional): Whether to skip validation. Defaults to True.
             limit (int, optional): Limit the number of samples in the dataset. Defaults to None.
             use_cache (bool, optional): Whether to cache the dataset. Defaults to False.
