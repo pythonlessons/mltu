@@ -1,3 +1,15 @@
+## [1.1.0] - 2022-08-28
+### Changed
+- Changed `mltu.transformers.SpectrogramPadding` object, to pad spectrogram end with zeros instead of start
+
+### Added
+- Created `Tutorials/09_translation_transformer` tutorial, that shows how to train translation transformer model
+- Created `mltu.tensorflow.tokenizers` module, that contains `CustomTokenizer` for text data
+- Created `mltu.tensorflow.transformer.attention` module, that contains `BaseAttention`, `CrossAttention`, `GlobalSelfAttention` and `CausalSelfAttention` layers
+- Created `mltu.tensorflow.transformer.layers` module, that contains `positional_encoding` function, `PositionalEmbedding`, `FeedForward`, `EncoderLayer`, `DecoderLayer`, `Encoder`, `Decoder` layers and `Transformer` model 
+- Created `mltu.tensorflow.transformer.callbacks` module, that contains `EncDecSplitCallback` callback, to split Transformer model into separate encoder and decoder models
+- Created `mltu.tensorflow.transformer.utils` module, that contains `MaskedLoss` loss and `MaskedAccuracy` metric, used for training Transformer models
+
 ## [1.0.15] - 2022-07-15
 ### Changed
 - Fixed bug in `mltu.dataProvider.DataProvider` to work with `batch_postprocessors`.
