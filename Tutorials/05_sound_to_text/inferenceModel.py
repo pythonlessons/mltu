@@ -24,14 +24,40 @@ if __name__ == "__main__":
     from tqdm import tqdm
     from mltu.configs import BaseModelConfigs
 
-    configs = BaseModelConfigs.load("Models/05_sound_to_text/202302051936/configs.yaml")
+    # import tensorflow as tf
+    # try: [tf.config.experimental.set_memory_growth(gpu, True) for gpu in tf.config.experimental.list_physical_devices("GPU")]
+    # except: pass
+
+    # from mltu.tensorflow.callbacks import Model2onnx
+
+    # model = tf.keras.models.load_model("Models/05_sound_to_text/202308251446/model.h5", compile=False)
+    # Model2onnx.model2onnx(model, "Models/05_sound_to_text/202308251446/model.onnx")
+    # pass
+
+    configs = BaseModelConfigs.load("Models/05_sound_to_text/202308251446/configs.yaml")
 
     model = WavToTextModel(model_path=configs.model_path, char_list=configs.vocab, force_cpu=False)
 
-    df = pd.read_csv("Models/05_sound_to_text/202302051936/val.csv").values.tolist()
+    metadata_path = "/home/rokbal/Downloads/bengaliai-speech/bengaliai-speech/train.csv"
+    train_mp3s_path = "/home/rokbal/Downloads/bengaliai-speech/bengaliai-speech/train_mp3s"
+
+    metadata_df = pd.read_csv(metadata_path, header=None)
+
+    train_dataset, val_dataset = [], []
+    for index, row in tqdm(metadata_df.iterrows(), total=len(metadata_df)):
+        if index == 0:
+            continue
+        if row[2] == "train":
+            mp3_file_path = f"{train_mp3s_path}/{row[0]}.mp3"
+            train_dataset.append([mp3_file_path, row[1]])
+        else:
+            mp3_file_path = f"{train_mp3s_path}/{row[0]}.mp3"
+            val_dataset.append([mp3_file_path, row[1]])
+
+    # df = pd.read_csv("Models/05_sound_to_text/202302051936/val.csv").values.tolist()
 
     accum_cer, accum_wer = [], []
-    for wav_path, label in tqdm(df):
+    for (wav_path, label) in tqdm(val_dataset):
         
         spectrogram = WavReader.get_spectrogram(wav_path, frame_length=configs.frame_length, frame_step=configs.frame_step, fft_length=configs.fft_length)
         # WavReader.plot_raw_audio(wav_path, label)
