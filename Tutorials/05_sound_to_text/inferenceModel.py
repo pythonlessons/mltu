@@ -36,7 +36,7 @@ if __name__ == "__main__":
         spectrogram = WavReader.get_spectrogram(wav_path, frame_length=configs.frame_length, frame_step=configs.frame_step, fft_length=configs.fft_length)
         # WavReader.plot_raw_audio(wav_path, label)
 
-        padded_spectrogram = np.pad(spectrogram, ((configs.max_spectrogram_length - spectrogram.shape[0], 0),(0,0)), mode="constant", constant_values=0)
+        padded_spectrogram = np.pad(spectrogram, ((0, configs.max_spectrogram_length - spectrogram.shape[0]),(0,0)), mode="constant", constant_values=0)
 
         # WavReader.plot_spectrogram(spectrogram, label)
 

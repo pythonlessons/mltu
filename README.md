@@ -24,3 +24,4 @@ Each tutorial has its own requirements.txt file for a specific mltu version. As 
 6. [Introduction to PyTorch in a practical way](https://pylessons.com/pytorch-introduction), code in ```Tutorials\06_pytorch_introduction``` folder;
 7. [Using custom wrapper to simplify PyTorch models training pipeline](https://pylessons.com/pytorch-introduction), code in ```Tutorials\07_pytorch_wrapper``` folder;
 8. [Handwriting words recognition with PyTorch](https://pylessons.com/handwriting-recognition-pytorch), code in ```Tutorials\08_handwriting_recognition_torch``` folder;
+9. [Transformer training with TensorFlow for Translation task](https://pylessons.com/transformers-training), code in ```Tutorials\09_translation_transformer``` folder;
