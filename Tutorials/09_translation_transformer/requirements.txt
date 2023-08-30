@@ -1,1 +1,3 @@
 beautifulsoup4
+tf2onnx==1.14.0
+onnx==1.12.0
