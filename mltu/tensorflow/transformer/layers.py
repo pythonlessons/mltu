@@ -37,7 +37,7 @@ class PositionalEmbedding(tf.keras.layers.Layer):
         compute_mask: Computes the mask to be applied to the embeddings.
         call: Performs the forward pass of the layer.
     """
-    def __init__(self, vocab_size: int, d_model: int, embedding: tf.keras.layers.Embedding=None):
+    def __init__(self, vocab_size: int, d_model: int):
         """ Constructor of the PositionalEmbedding layer.
 
         Args:
@@ -47,13 +47,24 @@ class PositionalEmbedding(tf.keras.layers.Layer):
         """
         super().__init__()
         self.d_model = d_model
-        self.embedding = tf.keras.layers.Embedding(vocab_size, d_model, mask_zero=True) if embedding is None else embedding
+        if vocab_size is not None:
+            self.embedding = tf.keras.layers.Embedding(vocab_size, d_model, mask_zero=True)
         self.pos_encoding = positional_encoding(length=2048, depth=d_model)
 
     def compute_mask(self, *args, **kwargs):
         """ Computes the mask to be applied to the embeddings.
+
+        Args:
+            inputs: Tensor input(s).
+            mask: Previous mask.
+
+        Returns:
+            tf.Tensor: The computed mask.
         """
-        return self.embedding.compute_mask(*args, **kwargs)
+        if hasattr(self, 'embedding'):
+            return self.embedding.compute_mask(*args, **kwargs)
+        else:
+            return None  # If no embedding layer, return no mask
 
     def call(self, x: tf.Tensor) -> tf.Tensor:
         """ Performs the forward pass of the layer.
@@ -65,11 +76,12 @@ class PositionalEmbedding(tf.keras.layers.Layer):
             tf.Tensor: The output sequence of embedding vectors with added positional information. The shape is
                 (batch_size, seq_length, d_model).
         """
-        x = self.embedding(x)
+        if hasattr(self, 'embedding'):
+            x = self.embedding(x)
         length = tf.shape(x)[1]
         # This factor sets the relative scale of the embedding and positonal_encoding.
-        x *= tf.math.sqrt(tf.cast(self.d_model, tf.float32))
-        x = x + self.pos_encoding[tf.newaxis, :length, :]
+        x *= tf.math.sqrt(tf.cast(self.d_model, x.dtype))
+        x = x + tf.cast(self.pos_encoding[tf.newaxis, :length, :], dtype=x.dtype)
         return x
     
 class FeedForward(tf.keras.layers.Layer):
@@ -84,7 +96,7 @@ class FeedForward(tf.keras.layers.Layer):
         add (tf.keras.layers.Add): The Add layer.
         layer_norm (tf.keras.layers.LayerNormalization): The LayerNormalization layer.
     """
-    def __init__(self, d_model: int, dff: int, dropout_rate: float=0.1):
+    def __init__(self, d_model: int, dff: int, dropout_rate: float=0.1, activation: str='relu'):
         """
         Constructor of the FeedForward layer.
 
@@ -95,7 +107,7 @@ class FeedForward(tf.keras.layers.Layer):
         """
         super().__init__()
         self.seq = tf.keras.Sequential([
-            tf.keras.layers.Dense(dff, activation='relu'),
+            tf.keras.layers.Dense(dff, activation=activation),
             tf.keras.layers.Dense(d_model),
             tf.keras.layers.Dropout(dropout_rate)
         ])
@@ -128,7 +140,7 @@ class EncoderLayer(tf.keras.layers.Layer):
         self_attention (GlobalSelfAttention): The global self-attention layer.
         ffn (FeedForward): The feed-forward layer.
     """
-    def __init__(self, d_model: int, num_heads: int, dff: int, dropout_rate: float=0.1):
+    def __init__(self, d_model: int, num_heads: int, dff: int, dropout_rate: float=0.1, activation: str='relu'):
         """
         Constructor of the EncoderLayer.
 
@@ -146,7 +158,7 @@ class EncoderLayer(tf.keras.layers.Layer):
             dropout=dropout_rate
             )
 
-        self.ffn = FeedForward(d_model, dff)
+        self.ffn = FeedForward(d_model, dff, dropout_rate, activation)
 
     def call(self, x: tf.Tensor) -> tf.Tensor:
         """
@@ -177,7 +189,7 @@ class Encoder(tf.keras.layers.Layer):
         enc_layers (list): The list of encoder layers.
         dropout (tf.keras.layers.Dropout): The dropout layer.
     """
-    def __init__(self, num_layers: int, d_model: int, num_heads: int, dff: int, vocab_size: int, dropout_rate: float=0.1):
+    def __init__(self, num_layers: int, d_model: int, num_heads: int, dff: int, vocab_size: int, dropout_rate: float=0.1, activation: str='relu'):
         """
         Constructor of the Encoder.
 
@@ -200,7 +212,8 @@ class Encoder(tf.keras.layers.Layer):
             EncoderLayer(d_model=d_model,
                         num_heads=num_heads,
                         dff=dff,
-                        dropout_rate=dropout_rate)
+                        dropout_rate=dropout_rate,
+                        activation=activation)
             for _ in range(num_layers)]
         self.dropout = tf.keras.layers.Dropout(dropout_rate)
 
@@ -246,7 +259,7 @@ class DecoderLayer(tf.keras.layers.Layer):
         cross_attention (CrossAttention): The cross-attention layer.
         ffn (FeedForward): The feed-forward layer.
     """
-    def __init__(self, d_model: int, num_heads: int, dff: int, dropout_rate: float=0.1):
+    def __init__(self, d_model: int, num_heads: int, dff: int, dropout_rate: float=0.1, activation: str='relu'):
         """
         Constructor of the DecoderLayer.
 
@@ -268,7 +281,7 @@ class DecoderLayer(tf.keras.layers.Layer):
             key_dim=d_model,
             dropout=dropout_rate)
 
-        self.ffn = FeedForward(d_model, dff)
+        self.ffn = FeedForward(d_model, dff, dropout_rate, activation=activation)
 
     def call(self, x: tf.Tensor, context: tf.Tensor) -> tf.Tensor:
         """
@@ -303,7 +316,7 @@ class Decoder(tf.keras.layers.Layer):
         dec_layers (list): The list of decoder layers.
         dropout (tf.keras.layers.Dropout): The dropout layer.
     """
-    def __init__(self, num_layers: int, d_model: int, num_heads: int, dff: int, vocab_size: int, dropout_rate: float=0.1):
+    def __init__(self, num_layers: int, d_model: int, num_heads: int, dff: int, vocab_size: int, dropout_rate: float=0.1, activation: str='relu'):
         """
         Constructor of the Decoder.
 
@@ -327,7 +340,8 @@ class Decoder(tf.keras.layers.Layer):
                 d_model=d_model, 
                 num_heads=num_heads, 
                 dff=dff, 
-                dropout_rate=dropout_rate) for _ in range(num_layers)]
+                dropout_rate=dropout_rate, 
+                activation=activation) for _ in range(num_layers)]
 
         self.last_attn_scores = None
 

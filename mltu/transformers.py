@@ -1,11 +1,20 @@
 import cv2
 import typing
+import logging
 import numpy as np
 
 from . import Image
+from mltu.annotations.audio import Audio
 
-import logging
-
+""" Implemented Transformers:
+- ExpandDims - Expand dimension of data
+- ImageResizer - Resize image to (width, height)
+- LabelIndexer - Convert label to index by vocab
+- LabelPadding - Pad label to max_word_length
+- SpectrogramPadding - Pad spectrogram to max_spectrogram_length
+- AudioToSpectrogram - Convert Audio to Spectrogram
+- ImageShowCV2 - Show image for visual inspection
+"""
 
 class Transformer:
     def __init__(self, log_level: int = logging.INFO) -> None:
@@ -162,6 +171,62 @@ class SpectrogramPadding(Transformer):
         padded_spectrogram = np.pad(spectrogram, ((0, self.max_spectrogram_length - spectrogram.shape[0]),(0,0)), mode="constant", constant_values=self.padding_value)
 
         return padded_spectrogram, label
+
+
+class AudioToSpectrogram(Transformer):
+    """Read wav file with librosa and return audio and label
+    
+    Attributes:
+        frame_length (int): Length of the frames in samples.
+        frame_step (int): Step size between frames in samples.
+        fft_length (int): Number of FFT components.
+        log_level (int): Logging level (default: logging.INFO)
+    """
+    try:
+        import librosa
+    except ImportError:
+        raise ImportError("librosa is required to transform Audio. Please install it with `pip install librosa`.")
+
+    def __init__(
+            self,
+            frame_length: int = 256,
+            frame_step: int = 160,
+            fft_length: int = 384,
+            log_level: int = logging.INFO,
+        ) -> None:
+        super(AudioToSpectrogram, self).__init__(log_level=log_level)
+        self.frame_length = frame_length
+        self.frame_step = frame_step
+        self.fft_length = fft_length
+
+    def __call__(self, audio: Audio, label: typing.Any):
+        """Compute the spectrogram of a WAV file
+
+        Args:
+            audio (Audio): Audio object
+            label (Any): Label of audio
+
+        Returns:
+            np.ndarray: Spectrogram of audio
+            label (Any): Label of audio
+        """
+
+        # Compute the Short Time Fourier Transform (STFT) of the audio data and store it in the variable 'spectrogram'
+        # The STFT is computed with a hop length of 'frame_step' samples, a window length of 'frame_length' samples, and 'fft_length' FFT components.
+        # The resulting spectrogram is also transposed for convenience
+        spectrogram = self.librosa.stft(audio.numpy(), hop_length=self.frame_step, win_length=self.frame_length, n_fft=self.fft_length).T
+
+        # Take the absolute value of the spectrogram to obtain the magnitude spectrum
+        spectrogram = np.abs(spectrogram)
+
+        # Take the square root of the magnitude spectrum to obtain the log spectrogram
+        spectrogram = np.power(spectrogram, 0.5)
+
+        # Normalize the spectrogram by subtracting the mean and dividing by the standard deviation.
+        # A small value of 1e-10 is added to the denominator to prevent division by zero.
+        spectrogram = (spectrogram - np.mean(spectrogram)) / (np.std(spectrogram) + 1e-10)
+
+        return spectrogram, label
 
 
 class ImageShowCV2(Transformer):
