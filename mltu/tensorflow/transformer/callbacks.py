@@ -18,15 +18,20 @@ class EncDecSplitCallback(Callback):
         model_path: str,
         encoder_metadata: dict = None,
         decoder_metadata: dict = None,
+        model_name = "model.h5"
     ):
         """Callback to extract the encoder and decoder models from Transformer model and save them separately"""
         super(EncDecSplitCallback, self).__init__()
         self.model_path = model_path
         self.encoder_metadata = encoder_metadata
         self.decoder_metadata = decoder_metadata
+        self.model_name = model_name
 
     def on_train_end(self, epoch: int, logs: dict = None):
         try:
+            # load best model weights
+            self.model.load_weights(self.model_path + "/" + self.model_name)
+            
             # extract encoder and decoder models
             encoder_model = tf.keras.Model(
                 inputs=self.model.inputs[0], outputs=self.model.get_layer("encoder").output
@@ -45,12 +50,10 @@ class EncDecSplitCallback(Callback):
             Model2onnx.model2onnx(decoder_model, self.model_path + "/decoder.onnx")
 
             # save encoder and decoder metadata
-            Model2onnx.include_metadata(
-                self.model_path + "/encoder.onnx", self.encoder_metadata
-            )
-            Model2onnx.include_metadata(
-                self.model_path + "/decoder.onnx", self.decoder_metadata
-            )
+            if self.encoder_metadata:
+                Model2onnx.include_metadata(self.model_path + "/encoder.onnx", self.encoder_metadata)
+            if self.decoder_metadata:
+                Model2onnx.include_metadata(self.model_path + "/decoder.onnx", self.decoder_metadata)
         except Exception as e:
             print(e)
             pass

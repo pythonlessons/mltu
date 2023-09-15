@@ -37,6 +37,7 @@ class Model:
         optimizer: torch.optim.Optimizer, 
         loss: typing.Callable,
         metrics: typing.List[Metric] = [],
+        mixed_precision: bool = False,
         ):
         """ Initialize model class
 
@@ -45,12 +46,15 @@ class Model:
             optimizer (torch.optim.Optimizer): PyTorch optimizer
             loss (typing.Callable): loss function
             metrics (typing.List[Metric], optional): list of metrics. Defaults to [].
+            mixed_precision (bool, optional): whether to use mixed precision. Defaults to False.
         """
         self.model = model
         self.optimizer = optimizer
         self.loss = loss
 
         self.metrics = MetricsHandler(metrics)
+
+        self.mixed_precision = mixed_precision
 
         self.stop_training = False
         # get device on which model is running
@@ -98,11 +102,18 @@ class Model:
         Returns:
             torch.Tensor: loss
         """
-        self.optimizer.zero_grad()
-        output = self.model(data)
-        loss = self.loss(output, target)
+        if self.mixed_precision:
+            with torch.cuda.amp.autocast():
+                output = self.model(data)
+                loss = self.loss(output, target)
+        else:
+            output = self.model(data)
+            loss = self.loss(output, target)
+
         loss.backward()
         self.optimizer.step()
+        self.optimizer.zero_grad()
+
         torch.cuda.synchronize() # synchronize after each forward and backward pass
 
         self.metrics.update(target, output)
@@ -127,6 +138,9 @@ class Model:
         loss = self.loss(output, target)
 
         self.metrics.update(target, output)
+
+        # clear GPU memory cache after each validation step
+        torch.cuda.empty_cache()
 
         return loss
     
@@ -182,22 +196,24 @@ class Model:
         self.model.eval()
         loss_sum = 0
         pbar = tqdm(dataProvider, total=len(dataProvider))
-        for step, (data, target) in enumerate(pbar, start=1):
-            self.callbacks.on_batch_begin(step, logs=None, train=False)
+        # disable autograd and gradient computation in PyTorch
+        with torch.no_grad():
+            for step, (data, target) in enumerate(pbar, start=1):
+                self.callbacks.on_batch_begin(step, logs=None, train=False)
 
-            data, target = self.toDevice(*toTorch(data, target))
-            loss = self.test_step(data, target)
-            loss_sum += loss.item()
-            loss_mean = loss_sum / step
+                data, target = self.toDevice(*toTorch(data, target))
+                loss = self.test_step(data, target)
+                loss_sum += loss.item()
+                loss_mean = loss_sum / step
 
-            # get testing results of one step
-            logs = self.metrics.results(loss_mean, train=False)
-            description = self.metrics.description(train=False)
+                # get testing results of one step
+                logs = self.metrics.results(loss_mean, train=False)
+                description = self.metrics.description(train=False)
 
-            # update progress bar description
-            pbar.set_description(description)
+                # update progress bar description
+                pbar.set_description(description)
 
-            self.callbacks.on_batch_end(step, logs=logs, train=False)
+                self.callbacks.on_batch_end(step, logs=logs, train=False)
 
         # reset metrics after each test epoch
         self.metrics.reset()

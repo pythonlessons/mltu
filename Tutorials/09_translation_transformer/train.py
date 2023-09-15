@@ -131,6 +131,7 @@ transformer.fit(
     validation_data=val_dataProvider, 
     epochs=configs.train_epochs,
     callbacks=[
+        earlystopper,
         warmupCosineDecay,
         checkpoint, 
         tb_callback, 

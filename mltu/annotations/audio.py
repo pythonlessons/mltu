@@ -8,6 +8,7 @@ class Audio:
         audio (np.ndarray): Audio array
         sample_rate (int): Sample rate
         init_successful (bool): True if audio was successfully read
+        library (object): Library used to read audio, tested only with librosa
     """
     init_successful = False
     augmented=False
@@ -57,4 +58,10 @@ class Audio:
         return len(self._audio)
     
     def __call__(self) -> np.ndarray:
+        return self._audio
+    
+    def __repr__(self):
+        return repr(self._audio)
+    
+    def __array__(self):
         return self._audio

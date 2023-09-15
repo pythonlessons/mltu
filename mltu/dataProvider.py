@@ -182,6 +182,7 @@ class DataProvider:
             index (bool, optional): Whether to save the index. Defaults to False.
         """
         df = pd.DataFrame(self._dataset)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         df.to_csv(path, index=index)
 
     def get_batch_annotations(self, index: int) -> typing.List:

@@ -189,7 +189,7 @@ class Encoder(tf.keras.layers.Layer):
         enc_layers (list): The list of encoder layers.
         dropout (tf.keras.layers.Dropout): The dropout layer.
     """
-    def __init__(self, num_layers: int, d_model: int, num_heads: int, dff: int, vocab_size: int, dropout_rate: float=0.1, activation: str='relu'):
+    def __init__(self, num_layers: int, d_model: int, num_heads: int, dff: int, vocab_size: int, dropout_rate: float=0.1, activation: str='relu', **kwargs):
         """
         Constructor of the Encoder.
 
@@ -201,7 +201,7 @@ class Encoder(tf.keras.layers.Layer):
             vocab_size (int): The size of the vocabulary.
             dropout_rate (float): The dropout rate.
         """
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.d_model = d_model
         self.num_layers = num_layers
@@ -217,13 +217,6 @@ class Encoder(tf.keras.layers.Layer):
             for _ in range(num_layers)]
         self.dropout = tf.keras.layers.Dropout(dropout_rate)
 
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'd_model': self.d_model,
-            'num_layers': self.num_layers,
-        })
-        return config
 
     def call(self, x: tf.Tensor) -> tf.Tensor:
         """
@@ -300,7 +293,6 @@ class DecoderLayer(tf.keras.layers.Layer):
         x = self.ffn(x)  # Shape `(batch_size, seq_len, d_model)`.
         return x
 
-
 class Decoder(tf.keras.layers.Layer):
     """
     A custom TensorFlow layer that implements the Decoder. This layer is mostly used in the Transformer models
@@ -316,7 +308,7 @@ class Decoder(tf.keras.layers.Layer):
         dec_layers (list): The list of decoder layers.
         dropout (tf.keras.layers.Dropout): The dropout layer.
     """
-    def __init__(self, num_layers: int, d_model: int, num_heads: int, dff: int, vocab_size: int, dropout_rate: float=0.1, activation: str='relu'):
+    def __init__(self, num_layers: int, d_model: int, num_heads: int, dff: int, vocab_size: int, dropout_rate: float=0.1, activation: str='relu', **kwargs):
         """
         Constructor of the Decoder.
 
@@ -328,7 +320,7 @@ class Decoder(tf.keras.layers.Layer):
             vocab_size (int): The size of the vocabulary.
             dropout_rate (float): The dropout rate.
         """
-        super(Decoder, self).__init__()
+        super().__init__(**kwargs)
 
         self.d_model = d_model
         self.num_layers = num_layers
@@ -344,14 +336,6 @@ class Decoder(tf.keras.layers.Layer):
                 activation=activation) for _ in range(num_layers)]
 
         self.last_attn_scores = None
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'd_model': self.d_model,
-            'num_layers': self.num_layers,
-        })
-        return config
 
     def call(self, x: tf.Tensor, context: tf.Tensor) -> tf.Tensor:
         """
