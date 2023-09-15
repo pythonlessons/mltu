@@ -55,7 +55,8 @@ translator = PtEnTranslator("Models/09_translation_transformer/202308241514/mode
 val_dataset = []
 for es, en in val_examples:
     results, duration = translator.predict(es)
-    print(en.lower())
-    print(results)
+    print("Spanish:     ", es.lower())
+    print("English:     ", en.lower())
+    print("English pred:", results)
     print(duration)
     print()
