@@ -5,6 +5,15 @@ from keras.callbacks import Callback
 import logging
 
 class Model2onnx(Callback):
+    try:
+        import tf2onnx
+    except:
+        raise ImportError("tf2onnx is not installed. Please install it using 'pip install tf2onnx'")
+    
+    try:
+        import onnx
+    except:
+        raise ImportError("onnx is not installed. Please install it using 'pip install onnx'")
     """ Converts the model to onnx format after training is finished. """
     def __init__(
         self, 

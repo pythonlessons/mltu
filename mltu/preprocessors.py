@@ -8,8 +8,14 @@ import matplotlib
 import logging
 
 from . import Image
+from mltu.annotations.audio import Audio
 
-
+""" Implemented Preprocessors:
+- ImageReader - Read image from path and return image and label
+- AudioReader - Read audio from path and return audio and label
+- WavReader - Read wav file with librosa and return spectrogram and label
+- ImageCropper - Crop image to (width, height)
+"""
 
 class ImageReader:
     """Read image from path and return image and label"""
@@ -46,6 +52,52 @@ class ImageReader:
         return image, label
 
 
+class AudioReader:
+    """ Read audio from path and return audio and label
+
+    Attributes:
+        sample_rate (int): Sample rate. Defaults to None.
+        log_level (int): Log level. Defaults to logging.INFO.
+    """
+    try:
+        import librosa
+    except ImportError:
+        raise ImportError("librosa is required to read Audio. Please install it with `pip install librosa`.")
+
+    def __init__(
+            self, 
+            sample_rate = None,
+            log_level: int = logging.INFO, 
+        ) -> None:
+        self.sample_rate = sample_rate
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(log_level)
+
+    def __call__(self, audio_path: str, label: typing.Any) -> typing.Tuple[np.ndarray, typing.Any]:
+        """ Read audio from path and return audio and label
+        
+        Args:
+            audio_path (str): Path to audio
+            label (Any): Label of audio
+
+        Returns:
+            Audio: Audio object
+            Any: Label of audio
+        """
+        if isinstance(audio_path, str):
+            if not os.path.exists(audio_path):
+                raise FileNotFoundError(f"Audio {audio_path} not found.")
+        else:
+            raise TypeError(f"Audio {audio_path} is not a string.")
+
+        audio = Audio(audio_path, sample_rate=self.sample_rate, library=self.librosa)
+
+        if not audio.init_successful:
+            audio = None
+            self.logger.warning(f"Audio {audio_path} could not be read, returning None.")
+
+        return audio, label
+    
 class WavReader:
     """Read wav file with librosa and return audio and label
     
@@ -54,7 +106,6 @@ class WavReader:
         frame_step (int): Step size between frames in samples.
         fft_length (int): Number of FFT components.
     """
-
     def __init__(
             self,
             frame_length: int = 256,

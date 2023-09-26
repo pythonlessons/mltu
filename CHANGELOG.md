@@ -1,3 +1,13 @@
+## [1.1.1] - 2022-09-26
+### Changed
+- Included `self._executor` as generator in `mltu.dataProvider.DataProvider` object, to enable functionality to modify batch preprocessing without changing original code
+- Introduced changes in `mltu.torch.dataProvider.py` to handle data in multiprocessing and multithreading modes, for faster preprocessing while torch models
+- Modified `mltu.transformers.AudioPadding` object, to work with batches of raw audio data
+
+### Added
+- Created tutorial `10_wav2vec2_torch` (Audio to Text model) that shows how to train wav2vec2 model with mltu
+
+
 ## [1.1.0] - 2022-08-28
 ### Changed
 - Changed `mltu.transformers.SpectrogramPadding` object, to pad spectrogram end with zeros instead of start
@@ -9,6 +19,7 @@
 - Created `mltu.tensorflow.transformer.layers` module, that contains `positional_encoding` function, `PositionalEmbedding`, `FeedForward`, `EncoderLayer`, `DecoderLayer`, `Encoder`, `Decoder` layers and `Transformer` model 
 - Created `mltu.tensorflow.transformer.callbacks` module, that contains `EncDecSplitCallback` callback, to split Transformer model into separate encoder and decoder models
 - Created `mltu.tensorflow.transformer.utils` module, that contains `MaskedLoss` loss and `MaskedAccuracy` metric, used for training Transformer models
+
 
 ## [1.0.15] - 2022-07-15
 ### Changed
