@@ -123,12 +123,15 @@ reduceLROnPlat = ReduceLROnPlateau(monitor="val_masked_accuracy", factor=0.9, mi
 model2onnx = Model2onnx(f"{configs.model_path}/model.h5", metadata={"tokenizer": tokenizer.dict(), "detokenizer": detokenizer.dict()}, save_on_epoch_end=False)
 encDecSplitCallback = EncDecSplitCallback(configs.model_path, encoder_metadata={"tokenizer": tokenizer.dict()}, decoder_metadata={"detokenizer": detokenizer.dict()})
 
+configs.save()
+
 # Train the model
 transformer.fit(
     train_dataProvider, 
     validation_data=val_dataProvider, 
     epochs=configs.train_epochs,
     callbacks=[
+        earlystopper,
         warmupCosineDecay,
         checkpoint, 
         tb_callback, 

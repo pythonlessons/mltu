@@ -41,7 +41,8 @@ def edit_distance(prediction_tokens: typing.List[str], reference_tokens: typing.
     for i in range(len(prediction_tokens) + 1):
         dp[i][0] = i
     
-    dp[0] = [j for j in range(len(reference_tokens) + 1)]
+    for j in range(len(reference_tokens) + 1):
+        dp[0][j] = j
 
     # Iterate through the prediction and reference tokens
     for i, p_tok in enumerate(prediction_tokens):
@@ -99,28 +100,24 @@ def get_wer(
     Returns:
         Word error rate score
     """
-    if isinstance(preds, str):
-        preds = preds.split()
-    if isinstance(target, str):
-        target = target.split()
+    if isinstance(preds, str) and isinstance(target, str):
+        preds = [preds]
+        target = [target]
 
-    errors = edit_distance(preds, target)
-    total_words = len(target)
-
-    if total_words == 0:
-        return 0.0
-
-    return errors / total_words
-
-
-if __name__ == "__main__":
-    c1 = "ROKAS"
-    c2 = "ROKAZ "
-
-    w1 = "ROKAS GOOD BOY"
-    w2 = "ROKAZ IS A GOOD BOY"
-
-    cer = get_cer(c1, c2)
-    wer = get_wer(w1, w2)
-
-    print(wer)
+    if isinstance(preds, list) and isinstance(target, list):
+        errors, total_words = 0, 0
+        for _pred, _target in zip(preds, target):
+            if isinstance(_pred, str) and isinstance(_target, str):
+                errors += edit_distance(_pred.split(), _target.split())
+                total_words += len(_target.split())
+            else:
+                print("Error: preds and target must be either both strings or both lists of strings.")
+                return np.inf
+            
+    else:
+        print("Error: preds and target must be either both strings or both lists of strings.")
+        return np.inf
+    
+    wer = errors / total_words
+            
+    return wer

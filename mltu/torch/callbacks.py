@@ -14,6 +14,7 @@ class Callback:
         monitor: str = "val_loss"
     ) -> None:
         self.monitor = monitor
+        logging.basicConfig()
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.INFO)
 
@@ -204,48 +205,83 @@ class ModelCheckpoint(Callback):
 
 class TensorBoard(Callback):
     """ TensorBoard basic visualizations. """
-    def __init__(self, log_dir: str = "logs", comment: str = None):
+    def __init__(
+            self, 
+            log_dir: str = "logs", 
+            comment: str = None, 
+            histogram: bool=False,
+            train_name: str = "train",
+            val_name: str = "test",
+            train_writer: SummaryWriter = None,
+            val_writer: SummaryWriter = None,
+        ):
         """ TensorBoard basic visualizations.
         
         Args:
             log_dir (str, optional): the path of the directory where to save the log files to be parsed by TensorBoard. Defaults to "logs".
             comment (str, optional): comment to append to the default log_dir. Defaults to None.
+            histogram (bool, optional): if True, histogram of the model's parameters will be saved. Defaults to False.
+            train_name (str, optional): name of the training writer. Defaults to "train".
+            val_name (str, optional): name of the validation writer. Defaults to "test".
+            train_writer (SummaryWriter, optional): training writer. Defaults to None.
+            val_writer (SummaryWriter, optional): validation writer. Defaults to None.
         """
         super(TensorBoard, self).__init__()
 
         self.log_dir = log_dir
 
-        self.writer = None
+        self.train_writer = train_writer
+        self.val_writer = val_writer
         self.comment = str(comment) if not None else datetime.now().strftime("%Y%m%d-%H%M%S")
+        self.histogram = histogram
+
+        self.train_name = train_name
+        self.val_name = val_name
 
     def on_train_begin(self, logs=None):
-        if self.writer is None:
-            self.writer = SummaryWriter(self.log_dir, comment=self.comment)
+        if self.train_writer is None:
+            train_dir = self.log_dir + "/" + self.train_name
+            os.makedirs(train_dir, exist_ok=True)
+            self.train_writer = SummaryWriter(train_dir, comment=self.comment)
+
+        if self.val_writer is None:
+            val_dir = self.log_dir + "/" + self.val_name
+            os.makedirs(val_dir, exist_ok=True)
+            self.val_writer = SummaryWriter(val_dir, comment=self.comment)
 
     def update_lr(self, epoch: int):
         for param_group in self.model.optimizer.param_groups:
-            self.writer.add_scalar("learning_rate", param_group["lr"], epoch)
+            if self.train_writer:
+                self.train_writer.add_scalar("learning_rate", param_group["lr"], epoch)
 
-    def update_histogram(self, epoch: int):
-        for name, param in self.model.model.named_parameters():
-            self.writer.add_histogram(name, param.clone().cpu().data.numpy(), epoch)
+    # def update_histogram(self, epoch: int):
+    #     for name, param in self.model.model.named_parameters():
+    #         self.writer.add_histogram(name, param.clone().cpu().data.numpy(), epoch)
 
     def parse_key(self, key: str):
         if key.startswith("val_"):
-            return f"{key[4:].capitalize()}/test"
+            return self.val_name, key[4:]
         else:
-            return f"{key.capitalize()}/train"
+            return self.train_name, key
 
     def on_epoch_end(self, epoch: int, logs=None):
         logs = logs or {}
         for key, value in logs.items():
-            self.writer.add_scalar(self.parse_key(key), value, epoch)
+            _type, key = self.parse_key(key)
+            if _type == self.train_name:
+                self.train_writer.add_scalar(key, value, epoch)
+            else:
+                self.val_writer.add_scalar(key, value, epoch)
 
         self.update_lr(epoch)
-        self.update_histogram(epoch)
+        if self.histogram:
+            pass
+            # TODO
+            # self.update_histogram(epoch)
 
     def on_train_end(self, logs=None):
-        self.writer.close()
+        self.train_writer.close()
+        self.val_writer.close()
 
 
 class Model2onnx(Callback):
@@ -329,7 +365,7 @@ class Model2onnx(Callback):
             for key, value in self.metadata.items():
                 meta = onnx_model.metadata_props.add()
                 meta.key = key
-                meta.value = value
+                meta.value = str(value)
 
             # Save the modified ONNX model
             onnx.save(onnx_model, self.onnx_model_path)
@@ -392,3 +428,78 @@ class ReduceLROnPlateau(Callback):
                 self.model.optimizer.param_groups[0]["lr"] = new_lr
                 if self.verbose:
                     self.logger.info(f"Epoch {epoch}: reducing learning rate to {new_lr}.")
+
+
+class WarmupCosineDecay(Callback):
+    """ Cosine decay learning rate scheduler with warmup
+
+    Args:
+        lr_after_warmup (float): Learning rate after warmup
+        final_lr (float): Final learning rate
+        warmup_epochs (int): Number of warmup epochs
+        decay_epochs (int): Number of decay epochs
+        initial_lr (float, optional): Initial learning rate. Defaults to 0.0.
+        verbose (bool, optional): Whether to print learning rate. Defaults to False.
+        warmup_steps (int, optional): Number of warmup steps. Defaults to None.
+    """
+    def __init__(
+            self, 
+            lr_after_warmup: float, 
+            final_lr: float, 
+            warmup_epochs: int, 
+            decay_epochs: int, 
+            initial_lr: float=0.0, 
+            warmup_steps: int=None,
+            verbose=False
+        ) -> None:
+        super(WarmupCosineDecay, self).__init__()
+        self.lr_after_warmup = lr_after_warmup
+        self.final_lr = final_lr
+        self.warmup_epochs = warmup_epochs
+        self.decay_epochs = decay_epochs
+        self.initial_lr = initial_lr
+        self.warmup_steps = warmup_steps
+        self.verbose = verbose
+        self.step = None
+
+        self.warmup_lrs = np.linspace(self.initial_lr, self.lr_after_warmup, self.warmup_epochs)
+        if warmup_steps:
+            self.step = 0
+            self.warmup_epochs = 0
+            self.warmup_lrs = np.linspace(self.initial_lr, self.lr_after_warmup, warmup_steps)
+
+    def on_epoch_begin(self, epoch: int, logs: dict=None):
+        """ Adjust learning rate at the beginning of each epoch """
+
+        if self.warmup_steps:
+            return logs
+
+        if epoch >= self.warmup_epochs + self.decay_epochs:
+            return logs
+
+        if epoch <= self.warmup_epochs:
+            lr = self.warmup_lrs[epoch-1]
+        else:
+            progress = (epoch - self.warmup_epochs) / self.decay_epochs
+            lr = self.final_lr + 0.5 * (self.lr_after_warmup - self.final_lr) * (1 + np.cos(np.pi * progress))
+
+        self.model.optimizer.param_groups[0]["lr"] = lr
+        
+        if self.verbose:
+            self.logger.info(f"Epoch {epoch} - Learning Rate: {lr}")
+
+    def on_train_batch_begin(self, batch: int, logs: dict=None):
+        if self.warmup_steps and self.step is not None:
+            if self.step < self.warmup_steps:
+                self.model.optimizer.param_groups[0]["lr"] = self.warmup_lrs[self.step]
+                self.step += 1
+            else:
+                self.step = None
+    
+    def on_epoch_end(self, epoch: int, logs: dict=None):
+        logs = logs or {}
+        
+        # Log the learning rate value
+        logs["lr"] = self.model.optimizer.param_groups[0]["lr"]
+        
+        return logs

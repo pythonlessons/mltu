@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 from mltu.tokenizers import CustomTokenizer
 from mltu.inferenceModel import OnnxInferenceModel
@@ -12,6 +13,7 @@ class PtEnTranslator(OnnxInferenceModel):
         self.detokenizer = CustomTokenizer.load(self.metadata["detokenizer"])
 
     def predict(self, sentence):
+        start = time.time()
         tokenized_sentence = self.tokenizer.texts_to_sequences([sentence])[0]
         encoder_input = np.pad(tokenized_sentence, (0, self.tokenizer.max_length - len(tokenized_sentence)), constant_values=0).astype(np.int64)
 
@@ -30,8 +32,7 @@ class PtEnTranslator(OnnxInferenceModel):
                 break
         
         results = self.detokenizer.detokenize([tokenized_results])
-        return results[0]
-
+        return results[0], time.time() - start
 
 def read_files(path):
     with open(path, "r", encoding="utf-8") as f:
@@ -49,11 +50,13 @@ es_validation_data = read_files(es_validation_data_path)
 max_lenght = 500
 val_examples = [[es_sentence, en_sentence] for es_sentence, en_sentence in zip(es_validation_data, en_validation_data) if len(es_sentence) <= max_lenght and len(en_sentence) <= max_lenght]
 
-translator = PtEnTranslator("Models/09_translation_transformer/202307241748/model.onnx")
+translator = PtEnTranslator("Models/09_translation_transformer/202308241514/model.onnx")
 
 val_dataset = []
 for es, en in val_examples:
-    results = translator.predict(es)
-    print(en)
-    print(results)
+    results, duration = translator.predict(es)
+    print("Spanish:     ", es.lower())
+    print("English:     ", en.lower())
+    print("English pred:", results)
+    print(duration)
     print()

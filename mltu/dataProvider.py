@@ -182,6 +182,7 @@ class DataProvider:
             index (bool, optional): Whether to save the index. Defaults to False.
         """
         df = pd.DataFrame(self._dataset)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         df.to_csv(path, index=index)
 
     def get_batch_annotations(self, index: int) -> typing.List:
@@ -204,10 +205,21 @@ class DataProvider:
 
         return batch_annotations
     
+    def start_executor(self) -> None:
+        """ Start the executor to process data"""
+        def executor(batch_data):
+            for data in batch_data:
+                yield self.process_data(data)
+
+        if not hasattr(self, "_executor"):
+            self._executor = executor
+
     def __iter__(self):
         """ Create a generator that iterate over the Sequence."""
-        for item in (self[i] for i in range(len(self))):
-            yield item
+        self.start_executor()
+        for index in range(len(self)):
+            results = self[index]
+            yield results
 
     def process_data(self, batch_data):
         """ Process data batch of data """
@@ -249,19 +261,22 @@ class DataProvider:
         return data, annotation
 
     def __getitem__(self, index: int):
-        """ Returns a batch of data by batch index"""
+        """ Returns a batch of processed data by index
+        
+        Args:
+            index (int): index of batch
+            
+        Returns:
+            tuple: batch of data and batch of annotations
+        """
         dataset_batch = self.get_batch_annotations(index)
         
         # First read and preprocess the batch data
         batch_data, batch_annotations = [], []
-        for index, batch in enumerate(dataset_batch):
-
-            data, annotation = self.process_data(batch)
-
+        for data, annotation in self._executor(dataset_batch):
             if data is None or annotation is None:
                 self.logger.warning("Data or annotation is None, skipping.")
                 continue
-
             batch_data.append(data)
             batch_annotations.append(annotation)
 
