@@ -38,6 +38,7 @@ class Model:
         loss: typing.Callable,
         metrics: typing.List[Metric] = [],
         mixed_precision: bool = False,
+        scaler = None
         ):
         """ Initialize model class
 
@@ -47,6 +48,7 @@ class Model:
             loss (typing.Callable): loss function
             metrics (typing.List[Metric], optional): list of metrics. Defaults to [].
             mixed_precision (bool, optional): whether to use mixed precision. Defaults to False.
+            scaler (torch.cuda.amp.GradScaler, optional): PyTorch GradScaler. Defaults to None.
         """
         self.model = model
         self.optimizer = optimizer
@@ -55,6 +57,7 @@ class Model:
         self.metrics = MetricsHandler(metrics)
 
         self.mixed_precision = mixed_precision
+        self.scaler = torch.cuda.amp.GradScaler() if mixed_precision else scaler
 
         self.stop_training = False
         # get device on which model is running
@@ -102,17 +105,21 @@ class Model:
         Returns:
             torch.Tensor: loss
         """
+        self.optimizer.zero_grad()
+
         if self.mixed_precision:
             with torch.cuda.amp.autocast():
                 output = self.model(data)
                 loss = self.loss(output, target)
+                self.scaler.scale(loss).backward()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+
         else:
             output = self.model(data)
             loss = self.loss(output, target)
-
-        loss.backward()
-        self.optimizer.step()
-        self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
 
         torch.cuda.synchronize() # synchronize after each forward and backward pass
 

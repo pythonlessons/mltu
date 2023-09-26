@@ -24,12 +24,12 @@ import pandas as pd
 from configs import ModelConfigs
 
 configs = ModelConfigs()
-from transformers import TFWav2Vec2Model
+from transformers import TFWav2Vec2ForCTC
 from mltu.preprocessors import AudioReader
 
 
-train_dataset = pd.read_csv("Models/11_wav2vec2_torch/202309141138/train.csv").values.tolist()
-validation_dataset = pd.read_csv("Models/11_wav2vec2_torch/202309141138/val.csv").values.tolist()
+train_dataset = pd.read_csv("Models/10_wav2vec2_torch/202309171434/train.csv").values.tolist()
+validation_dataset = pd.read_csv("Models/10_wav2vec2_torch/202309171434/val.csv").values.tolist()
 
 # Create a data provider for the dataset
 train_dataProvider = DataProvider(
@@ -71,28 +71,24 @@ test_dataProvider = DataProvider(
     use_cache=True,
 )
 
-class TFWav2Vec2ForCTC(layers.Layer):
-    def __init__(self, output_dim, dropout_rate=0.2, **kwargs):
+class CustomWav2Vec2Model(layers.Layer):
+    def __init__(self, output_dim, **kwargs):
         super().__init__(**kwargs)
 
-        self.wav2vec2 = TFWav2Vec2Model.from_pretrained("facebook/wav2vec2-base-960h")
-        self.dropout = layers.Dropout(dropout_rate)
-        self.final_layer = layers.Dense(output_dim, activation="softmax")
+        pretrained_name = "facebook/wav2vec2-base-960h"
+        self.model = TFWav2Vec2ForCTC.from_pretrained(pretrained_name, vocab_size=output_dim, ignore_mismatched_sizes=True)
+        self.model.freeze_feature_encoder() # https://huggingface.co/blog/fine-tune-wav2vec2-english
 
     def __call__(self, inputs):
-        outputs = self.wav2vec2(inputs)
+        outputs = self.model(inputs)
 
-        hidden_states = outputs.last_hidden_state
-
-        dropout = self.dropout(hidden_states)
-
-        final_state = self.final_layer(dropout)
+        final_state = tf.nn.softmax(outputs.logits, axis=-1)
 
         return final_state
 
 custom_model = tf.keras.Sequential([
     layers.Input(shape=(None,), name="input", dtype=tf.float32),
-    TFWav2Vec2ForCTC(len(configs.vocab)+1, dropout_rate=0.2)
+    CustomWav2Vec2Model(len(configs.vocab)+1)
 ])
 
 for data in train_dataProvider:
@@ -105,7 +101,7 @@ custom_model.summary()
 
 # Compile the model and print summary
 custom_model.compile(
-    optimizer=tf.keras.optimizers.AdamW(learning_rate=configs.init_lr, weight_decay=1e-5), 
+    optimizer=tf.keras.optimizers.AdamW(learning_rate=configs.init_lr, weight_decay=configs.weight_decay), 
     loss=CTCloss(), 
     metrics=[
         CERMetric(vocabulary=configs.vocab),

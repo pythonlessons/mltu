@@ -67,19 +67,21 @@ data_provider = DataProvider(
         LabelIndexer(vocab),
         LabelPadding(max_word_length=configs.max_label_length, padding_value=len(vocab)),
         ],
-    use_cache=True,
-    use_multiprocessing=False,
+    use_cache=False,
     batch_postprocessors=[
         AudioPadding(max_audio_length=configs.max_audio_length, padding_value=0, use_on_batch=True)
-    ]
+    ],
+    use_multiprocessing=True,
+    max_queue_size=10,
+    workers=64,
 )
-
 train_dataProvider, test_dataProvider = data_provider.split(split=0.9)
-train_dataProvider.augmentors = [
-        RandomAudioNoise(), 
-        RandomAudioPitchShift(), 
-        RandomAudioTimeStretch()
-    ]
+
+# train_dataProvider.augmentors = [
+#         RandomAudioNoise(), 
+#         RandomAudioPitchShift(), 
+#         RandomAudioTimeStretch()
+#     ]
 
 vocab = sorted(vocab)
 configs.vocab = vocab
@@ -90,17 +92,11 @@ class CustomWav2Vec2Model(nn.Module):
     def __init__(self, hidden_states, dropout_rate=0.2, **kwargs):
         super(CustomWav2Vec2Model, self).__init__( **kwargs)
         pretrained_name = "facebook/wav2vec2-base-960h"
-        self.model = Wav2Vec2ForCTC.from_pretrained(pretrained_name).wav2vec2
-        # self.model.freeze_feature_encoder()
-        self.dropout = nn.Dropout(p=dropout_rate)
-        self.linear = nn.Linear(self.model.config.hidden_size, hidden_states)
+        self.model = Wav2Vec2ForCTC.from_pretrained(pretrained_name, vocab_size=hidden_states, ignore_mismatched_sizes=True)
+        self.model.freeze_feature_encoder() # this part does not need to be fine-tuned
 
     def forward(self, inputs):
-        output = self.model(inputs, attention_mask=None).last_hidden_state
-        # Apply dropout
-        output = self.dropout(output)
-        # Apply linear layer
-        output = self.linear(output)
+        output = self.model(inputs, attention_mask=None).logits
         # Apply softmax
         output = F.log_softmax(output, -1)
         return output
@@ -118,6 +114,7 @@ warmupCosineDecay = WarmupCosineDecay(
     decay_epochs=configs.decay_epochs,
     final_lr=configs.final_lr,
     initial_lr=configs.init_lr,
+    verbose=True,
 )
 tb_callback = TensorBoard(configs.model_path + "/logs")
 earlyStopping = EarlyStopping(monitor="val_CER", patience=16, mode="min", verbose=1)
@@ -133,12 +130,13 @@ model2onnx = Model2onnx(
 # create model object that will handle training and testing of the network
 model = Model(
     custom_model, 
-    loss = CTCLoss(blank=len(configs.vocab)),
-    optimizer = torch.optim.AdamW(custom_model.parameters(), lr=configs.init_lr, weight_decay=1e-5),
+    loss = CTCLoss(blank=len(configs.vocab), zero_infinity=True),
+    optimizer = torch.optim.AdamW(custom_model.parameters(), lr=configs.init_lr, weight_decay=configs.weight_decay),
     metrics=[
         CERMetric(configs.vocab), 
         WERMetric(configs.vocab)
     ],
+    mixed_precision=configs.mixed_precision,
 )
 
 # Save training and validation datasets as csv files

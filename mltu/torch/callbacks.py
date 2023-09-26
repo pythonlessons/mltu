@@ -440,6 +440,7 @@ class WarmupCosineDecay(Callback):
         decay_epochs (int): Number of decay epochs
         initial_lr (float, optional): Initial learning rate. Defaults to 0.0.
         verbose (bool, optional): Whether to print learning rate. Defaults to False.
+        warmup_steps (int, optional): Number of warmup steps. Defaults to None.
     """
     def __init__(
             self, 
@@ -448,6 +449,7 @@ class WarmupCosineDecay(Callback):
             warmup_epochs: int, 
             decay_epochs: int, 
             initial_lr: float=0.0, 
+            warmup_steps: int=None,
             verbose=False
         ) -> None:
         super(WarmupCosineDecay, self).__init__()
@@ -456,16 +458,27 @@ class WarmupCosineDecay(Callback):
         self.warmup_epochs = warmup_epochs
         self.decay_epochs = decay_epochs
         self.initial_lr = initial_lr
+        self.warmup_steps = warmup_steps
         self.verbose = verbose
+        self.step = None
+
+        self.warmup_lrs = np.linspace(self.initial_lr, self.lr_after_warmup, self.warmup_epochs)
+        if warmup_steps:
+            self.step = 0
+            self.warmup_epochs = 0
+            self.warmup_lrs = np.linspace(self.initial_lr, self.lr_after_warmup, warmup_steps)
 
     def on_epoch_begin(self, epoch: int, logs: dict=None):
         """ Adjust learning rate at the beginning of each epoch """
+
+        if self.warmup_steps:
+            return logs
 
         if epoch >= self.warmup_epochs + self.decay_epochs:
             return logs
 
         if epoch <= self.warmup_epochs:
-            lr = np.linspace(self.initial_lr, self.lr_after_warmup, 5)[epoch-1]
+            lr = self.warmup_lrs[epoch-1]
         else:
             progress = (epoch - self.warmup_epochs) / self.decay_epochs
             lr = self.final_lr + 0.5 * (self.lr_after_warmup - self.final_lr) * (1 + np.cos(np.pi * progress))
@@ -473,7 +486,15 @@ class WarmupCosineDecay(Callback):
         self.model.optimizer.param_groups[0]["lr"] = lr
         
         if self.verbose:
-            print(f"Epoch {epoch + 1} - Learning Rate: {lr}")
+            self.logger.info(f"Epoch {epoch} - Learning Rate: {lr}")
+
+    def on_train_batch_begin(self, batch: int, logs: dict=None):
+        if self.warmup_steps and self.step is not None:
+            if self.step < self.warmup_steps:
+                self.model.optimizer.param_groups[0]["lr"] = self.warmup_lrs[self.step]
+                self.step += 1
+            else:
+                self.step = None
     
     def on_epoch_end(self, epoch: int, logs: dict=None):
         logs = logs or {}

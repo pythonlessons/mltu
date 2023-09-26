@@ -174,11 +174,12 @@ class SpectrogramPadding(Transformer):
         return padded_spectrogram, label
 
 class AudioPadding(Transformer):
-    def __init__(self, max_audio_length: int, padding_value: int = 0, use_on_batch: bool = False):
+    def __init__(self, max_audio_length: int, padding_value: int = 0, use_on_batch: bool = False, limit: bool = False):
         super(AudioPadding, self).__init__()
         self.max_audio_length = max_audio_length
         self.padding_value = padding_value
         self.use_on_batch = use_on_batch
+        self.limit = limit
 
     def __call__(self, audio: Audio, label: typing.Any):
         # batched padding
@@ -192,13 +193,15 @@ class AudioPadding(Transformer):
 
             padded_audios = np.array(padded_audios)
             # limit audio if it exceed max_audio_length
-            padded_audios = padded_audios[:, :self.max_audio_length]
+            if self.limit:
+                padded_audios = padded_audios[:, :self.max_audio_length]
 
             return padded_audios, np.array(label)
 
         audio_numpy = audio.numpy()
         # limit audio if it exceed max_audio_length
-        audio_numpy = audio_numpy[:self.max_audio_length]
+        if self.limit:
+            audio_numpy = audio_numpy[:self.max_audio_length]
         padded_audio = np.pad(audio_numpy, (0, self.max_audio_length - audio_numpy.shape[0]), mode="constant", constant_values=self.padding_value)
 
         audio.audio = padded_audio
