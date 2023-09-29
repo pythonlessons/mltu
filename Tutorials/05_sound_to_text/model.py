@@ -7,7 +7,7 @@ from mltu.tensorflow.model_utils import residual_block, activation_layer
 
 def train_model(input_dim, output_dim, activation="leaky_relu", dropout=0.2):
     
-    inputs = layers.Input(shape=input_dim, name="input")
+    inputs = layers.Input(shape=input_dim, name="input", dtype=tf.float32)
 
     # expand dims to add channel dimension
     input = layers.Lambda(lambda x: tf.expand_dims(x, axis=-1))(inputs)
@@ -46,7 +46,7 @@ def train_model(input_dim, output_dim, activation="leaky_relu", dropout=0.2):
     x = layers.Dropout(dropout)(x)
 
     # Classification layer
-    output = layers.Dense(output_dim + 1, activation="softmax")(x)
+    output = layers.Dense(output_dim + 1, activation="softmax", dtype=tf.float32)(x)
     
     model = Model(inputs=inputs, outputs=output)
     return model

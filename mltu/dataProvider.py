@@ -216,7 +216,6 @@ class DataProvider:
 
     def __iter__(self):
         """ Create a generator that iterate over the Sequence."""
-        self.start_executor()
         for index in range(len(self)):
             results = self[index]
             yield results
@@ -269,6 +268,9 @@ class DataProvider:
         Returns:
             tuple: batch of data and batch of annotations
         """
+        if index==0:
+            self.start_executor()
+
         dataset_batch = self.get_batch_annotations(index)
         
         # First read and preprocess the batch data

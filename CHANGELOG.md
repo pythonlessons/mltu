@@ -1,3 +1,10 @@
+## [1.1.2] - 2022-09-29
+### Changed
+- Removed `Librosa` library dependency in requirements, now it is optional and required only with modules that use librosa
+
+### Added
+- Created `Tutorials.05_sound_to_text.train_no_limit.py` that demonstrates how to train audio recognition model with `mltu` without audio length limit
+
 ## [1.1.1] - 2022-09-26
 ### Changed
 - Included `self._executor` as generator in `mltu.dataProvider.DataProvider` object, to enable functionality to modify batch preprocessing without changing original code
