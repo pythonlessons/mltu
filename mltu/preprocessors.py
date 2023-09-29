@@ -59,8 +59,9 @@ class AudioReader:
     """
     try:
         import librosa
-    except ImportError:
-        raise ImportError("librosa is required to read Audio. Please install it with `pip install librosa`.")
+        librosa.__version__
+    except AttributeError:
+        raise ImportError("librosa is required to read WAV files. Please install it with `pip install librosa`.")
 
     def __init__(
             self, 
@@ -104,10 +105,12 @@ class WavReader:
         frame_step (int): Step size between frames in samples.
         fft_length (int): Number of FFT components.
     """
+    # Check if librosa is installed
     try:
         import librosa
-    except ImportError:
-        raise ImportError("librosa is required to read Audio. Please install it with `pip install librosa`.")
+        librosa.__version__
+    except AttributeError:
+        raise ImportError("librosa is required to read WAV files. Please install it with `pip install librosa`.")
 
     def __init__(
             self,
