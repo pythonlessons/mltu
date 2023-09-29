@@ -1,4 +1,4 @@
-## [1.1.2] - 2022-09-29
+## [1.1.3] - 2022-09-29
 ### Changed
 - Removed `Librosa` library dependency in requirements, now it is optional and required only with modules that use librosa
 
