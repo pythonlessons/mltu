@@ -1,3 +1,7 @@
+## [1.1.4] - 2022-09-29
+### Changed
+- Improoved `mltu.torch.dataProvider.DataProvider` to hangle `multiprocessing` when it doesn't work to switch to `multithreading`
+
 ## [1.1.3] - 2022-09-29
 ### Changed
 - Removed `Librosa` library dependency in requirements, now it is optional and required only with modules that use librosa

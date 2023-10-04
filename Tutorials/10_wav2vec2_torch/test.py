@@ -39,5 +39,6 @@ if __name__ == "__main__":
 
         accum_cer.append(cer)
         accum_wer.append(wer)
+        print(label)
 
         pbar.set_description(f"Average CER: {np.average(accum_cer):.4f}, Average WER: {np.average(accum_wer):.4f}")

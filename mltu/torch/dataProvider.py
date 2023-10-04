@@ -181,7 +181,12 @@ class DataProvider(BaseDataProvider):
 
         if not hasattr(self, "_executor"):
             if self.use_multiprocessing:
-                self._executor = ProcessExecutor(self.process_data, self.workers)
+                try:
+                    self._executor = ProcessExecutor(self.process_data, self.workers)
+                except:
+                    self.use_multiprocessing = False
+                    self.logger.error("Failed to start multiprocessing, switching to multithreading")
+                    self._executor = ThreadExecutor(self.process_data, self.workers)
             else:
                 self._executor = ThreadExecutor(self.process_data, self.workers)
 

@@ -65,15 +65,15 @@ data_provider = DataProvider(
         ],
     transformers=[
         LabelIndexer(vocab),
-        LabelPadding(max_word_length=configs.max_label_length, padding_value=len(vocab)),
         ],
     use_cache=False,
     batch_postprocessors=[
-        AudioPadding(max_audio_length=configs.max_audio_length, padding_value=0, use_on_batch=True)
+        AudioPadding(max_audio_length=configs.max_audio_length, padding_value=0, use_on_batch=True),
+        LabelPadding(padding_value=len(vocab), use_on_batch=True),
     ],
     use_multiprocessing=True,
     max_queue_size=10,
-    workers=64,
+    workers=configs.train_workers,
 )
 train_dataProvider, test_dataProvider = data_provider.split(split=0.9)
 
