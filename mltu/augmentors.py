@@ -581,11 +581,6 @@ class RandomAudioPitchShift(Augmentor):
         augment_annotation (bool): Whether to augment the annotation. Defaults to False.
         max_n_steps (int): Maximum number of steps to shift audio. Defaults to 5.
     """
-    try:
-        import librosa
-        # samplerate
-    except ImportError:
-        raise ImportError("librosa is required to augment Audio. Please install it with `pip install librosa`.")
     def __init__(
             self, 
             random_chance: float = 0.5,
@@ -595,6 +590,12 @@ class RandomAudioPitchShift(Augmentor):
         ) -> None:
         super(RandomAudioPitchShift, self).__init__(random_chance, log_level, augment_annotation)
         self.max_n_steps = max_n_steps
+
+        try:
+            import librosa
+            # samplerate
+        except ImportError:
+            raise ImportError("librosa is required to augment Audio. Please install it with `pip install librosa`.")
 
     def augment(self, audio: Audio) -> Audio:
         random_n_steps = np.random.randint(-self.max_n_steps, self.max_n_steps)
@@ -617,10 +618,6 @@ class RandomAudioTimeStretch(Augmentor):
         min_rate (float): Minimum rate to stretch audio. Defaults to 0.8.
         max_rate (float): Maximum rate to stretch audio. Defaults to 1.2.
     """
-    try:
-        import librosa
-    except ImportError:
-        raise ImportError("librosa is required to augment Audio. Please install it with `pip install librosa`.")
     def __init__(
             self, 
             random_chance: float = 0.5,
@@ -632,6 +629,11 @@ class RandomAudioTimeStretch(Augmentor):
         super(RandomAudioTimeStretch, self).__init__(random_chance, log_level, augment_annotation)
         self.min_rate = min_rate
         self.max_rate = max_rate
+
+        try:
+            import librosa
+        except ImportError:
+            raise ImportError("librosa is required to augment Audio. Please install it with `pip install librosa`.")
 
     def augment(self, audio: Audio) -> Audio:
         random_rate = np.random.uniform(self.min_rate, self.max_rate)

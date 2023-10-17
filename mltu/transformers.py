@@ -252,11 +252,6 @@ class AudioToSpectrogram(Transformer):
         fft_length (int): Number of FFT components.
         log_level (int): Logging level (default: logging.INFO)
     """
-    try:
-        import librosa
-    except ImportError:
-        raise ImportError("librosa is required to transform Audio. Please install it with `pip install librosa`.")
-
     def __init__(
             self,
             frame_length: int = 256,
@@ -268,6 +263,11 @@ class AudioToSpectrogram(Transformer):
         self.frame_length = frame_length
         self.frame_step = frame_step
         self.fft_length = fft_length
+
+        try:
+            import librosa
+        except ImportError:
+            raise ImportError("librosa is required to transform Audio. Please install it with `pip install librosa`.")
 
     def __call__(self, audio: Audio, label: typing.Any):
         """Compute the spectrogram of a WAV file

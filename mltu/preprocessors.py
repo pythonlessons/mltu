@@ -57,12 +57,6 @@ class AudioReader:
         sample_rate (int): Sample rate. Defaults to None.
         log_level (int): Log level. Defaults to logging.INFO.
     """
-    try:
-        import librosa
-        librosa.__version__
-    except AttributeError:
-        raise ImportError("librosa is required to read WAV files. Please install it with `pip install librosa`.")
-
     def __init__(
             self, 
             sample_rate = None,
@@ -71,6 +65,12 @@ class AudioReader:
         self.sample_rate = sample_rate
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(log_level)
+
+        try:
+            import librosa
+            librosa.__version__
+        except AttributeError:
+            raise ImportError("librosa is required to read WAV files. Please install it with `pip install librosa`.")
 
     def __call__(self, audio_path: str, label: typing.Any) -> typing.Tuple[np.ndarray, typing.Any]:
         """ Read audio from path and return audio and label
@@ -105,12 +105,6 @@ class WavReader:
         frame_step (int): Step size between frames in samples.
         fft_length (int): Number of FFT components.
     """
-    # Check if librosa is installed
-    try:
-        import librosa
-        librosa.__version__
-    except AttributeError:
-        raise ImportError("librosa is required to read WAV files. Please install it with `pip install librosa`.")
 
     def __init__(
             self,
@@ -124,6 +118,12 @@ class WavReader:
         self.fft_length = fft_length
 
         matplotlib.interactive(False)
+        # Check if librosa is installed
+        try:
+            import librosa
+            librosa.__version__
+        except AttributeError:
+            raise ImportError("librosa is required to read WAV files. Please install it with `pip install librosa`.")
 
     @staticmethod
     def get_spectrogram(wav_path: str, frame_length: int, frame_step: int, fft_length: int) -> np.ndarray:

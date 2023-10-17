@@ -5,15 +5,6 @@ from keras.callbacks import Callback
 import logging
 
 class Model2onnx(Callback):
-    try:
-        import tf2onnx
-    except:
-        raise ImportError("tf2onnx is not installed. Please install it using 'pip install tf2onnx'")
-    
-    try:
-        import onnx
-    except:
-        raise ImportError("onnx is not installed. Please install it using 'pip install onnx'")
     """ Converts the model to onnx format after training is finished. """
     def __init__(
         self, 
@@ -31,6 +22,16 @@ class Model2onnx(Callback):
         self.saved_model_path = saved_model_path
         self.metadata = metadata
         self.save_on_epoch_end = save_on_epoch_end
+
+        try:
+            import tf2onnx
+        except:
+            raise ImportError("tf2onnx is not installed. Please install it using 'pip install tf2onnx'")
+        
+        try:
+            import onnx
+        except:
+            raise ImportError("onnx is not installed. Please install it using 'pip install onnx'")
 
     @staticmethod
     def model2onnx(model: tf.keras.Model, onnx_model_path: str):
