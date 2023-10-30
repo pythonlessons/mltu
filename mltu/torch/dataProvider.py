@@ -257,9 +257,11 @@ class SequenceHandler:
             else:
                 print("Something went wrong")
 
-    def __call__(self, index):
+    def __call__(self, index: int):
         if index == 0:
             for _index in range(self.queue_size):
+                if _index >= self.max_len:
+                    break
                 self.data_queue.put(_index)
 
         while True:
