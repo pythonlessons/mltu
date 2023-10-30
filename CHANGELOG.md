@@ -1,4 +1,8 @@
-## [1.1.6] - 2022-10-30
+## [1.1.7] - 2022-10-30
+### Changed
+- Fixed bug in `mltu.torch.dataProvider.SequenceHandler`, to handle `len sequence < queue_size` case
+
+# [1.1.6] - 2022-10-30
 ### Changed
 - Fixed dependencies with `librosa` library
 
