@@ -5,6 +5,11 @@ import matplotlib.pyplot as plt
 import matplotlib
 import logging
 
+try:
+    import librosa
+except:
+    print("librosa not found. Please install it with `pip install librosa` if you plan to use it.")
+
 from . import Image
 from mltu.annotations.audio import Audio
 
@@ -67,7 +72,6 @@ class AudioReader:
         self.logger.setLevel(log_level)
 
         try:
-            import librosa
             librosa.__version__
         except AttributeError:
             raise ImportError("librosa is required to read WAV files. Please install it with `pip install librosa`.")
@@ -89,7 +93,7 @@ class AudioReader:
         else:
             raise TypeError(f"Audio {audio_path} is not a string.")
 
-        audio = Audio(audio_path, sample_rate=self.sample_rate, library=self.librosa)
+        audio = Audio(audio_path, sample_rate=self.sample_rate, library=librosa)
 
         if not audio.init_successful:
             audio = None
@@ -120,7 +124,6 @@ class WavReader:
         matplotlib.interactive(False)
         # Check if librosa is installed
         try:
-            import librosa
             librosa.__version__
         except AttributeError:
             raise ImportError("librosa is required to read WAV files. Please install it with `pip install librosa`.")
@@ -139,12 +142,12 @@ class WavReader:
             np.ndarray: Spectrogram of the WAV file.
         """
         # Load the wav file and store the audio data in the variable 'audio' and the sample rate in 'orig_sr'
-        audio, orig_sr = WavReader.librosa.load(wav_path) 
+        audio, orig_sr = librosa.load(wav_path) 
 
         # Compute the Short Time Fourier Transform (STFT) of the audio data and store it in the variable 'spectrogram'
         # The STFT is computed with a hop length of 'frame_step' samples, a window length of 'frame_length' samples, and 'fft_length' FFT components.
         # The resulting spectrogram is also transposed for convenience
-        spectrogram = WavReader.librosa.stft(audio, hop_length=frame_step, win_length=frame_length, n_fft=fft_length).T
+        spectrogram = librosa.stft(audio, hop_length=frame_step, win_length=frame_length, n_fft=fft_length).T
 
         # Take the absolute value of the spectrogram to obtain the magnitude spectrum
         spectrogram = np.abs(spectrogram)
@@ -168,7 +171,7 @@ class WavReader:
             title (str, optional): Title
         """
         # Load the wav file and store the audio data in the variable 'audio' and the sample rate in 'orig_sr'
-        audio, orig_sr = WavReader.librosa.load(wav_path, sr=sr)
+        audio, orig_sr = librosa.load(wav_path, sr=sr)
 
         duration = len(audio) / orig_sr
 

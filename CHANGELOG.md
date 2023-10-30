@@ -1,3 +1,7 @@
+## [1.1.6] - 2022-10-30
+### Changed
+- Fixed dependencies with `librosa` library
+
 ## [1.1.5] - 2022-10-17
 ### Changed
 - Fixed dependencies with `librosa` library
