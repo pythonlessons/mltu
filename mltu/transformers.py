@@ -3,6 +3,11 @@ import typing
 import logging
 import numpy as np
 
+try:
+    import librosa
+except:
+    print("librosa not found. Please install it with `pip install librosa` if you plan to use it.")
+
 from . import Image
 from mltu.annotations.audio import Audio
 
@@ -231,7 +236,7 @@ class AudioPadding(Transformer):
             if self.limit:
                 padded_audios = padded_audios[:, :self.max_audio_length]
 
-            return padded_audios, np.array(label)
+            return padded_audios, label
 
         audio_numpy = audio.numpy()
         # limit audio if it exceed max_audio_length
@@ -265,7 +270,7 @@ class AudioToSpectrogram(Transformer):
         self.fft_length = fft_length
 
         try:
-            import librosa
+            librosa.__version__
         except ImportError:
             raise ImportError("librosa is required to transform Audio. Please install it with `pip install librosa`.")
 
@@ -284,7 +289,7 @@ class AudioToSpectrogram(Transformer):
         # Compute the Short Time Fourier Transform (STFT) of the audio data and store it in the variable 'spectrogram'
         # The STFT is computed with a hop length of 'frame_step' samples, a window length of 'frame_length' samples, and 'fft_length' FFT components.
         # The resulting spectrogram is also transposed for convenience
-        spectrogram = self.librosa.stft(audio.numpy(), hop_length=self.frame_step, win_length=self.frame_length, n_fft=self.fft_length).T
+        spectrogram = librosa.stft(audio.numpy(), hop_length=self.frame_step, win_length=self.frame_length, n_fft=self.fft_length).T
 
         # Take the absolute value of the spectrogram to obtain the magnitude spectrum
         spectrogram = np.abs(spectrogram)

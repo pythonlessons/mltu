@@ -6,6 +6,11 @@ import logging
 from . import Image
 from mltu.annotations.audio import Audio
 
+try:
+    import librosa
+except:
+    print("librosa not found. Please install it with `pip install librosa` if you plan to use it.")
+
 """ 
 Implemented image augmentors:
 - RandomBrightness
@@ -592,15 +597,14 @@ class RandomAudioPitchShift(Augmentor):
         self.max_n_steps = max_n_steps
 
         try:
-            import librosa
-            # samplerate
+            librosa.__version__
         except ImportError:
             raise ImportError("librosa is required to augment Audio. Please install it with `pip install librosa`.")
 
     def augment(self, audio: Audio) -> Audio:
         random_n_steps = np.random.randint(-self.max_n_steps, self.max_n_steps)
         # changing default res_type "kaiser_best" to "linear" for speed and memory efficiency
-        shift_audio = self.librosa.effects.pitch_shift(
+        shift_audio = librosa.effects.pitch_shift(
             audio.numpy(), sr=audio.sample_rate, n_steps=random_n_steps, res_type="linear"
             )
         audio.audio = shift_audio
@@ -631,13 +635,13 @@ class RandomAudioTimeStretch(Augmentor):
         self.max_rate = max_rate
 
         try:
-            import librosa
+            librosa.__version__
         except ImportError:
             raise ImportError("librosa is required to augment Audio. Please install it with `pip install librosa`.")
 
     def augment(self, audio: Audio) -> Audio:
         random_rate = np.random.uniform(self.min_rate, self.max_rate)
-        stretch_audio = self.librosa.effects.time_stretch(audio.numpy(), rate=random_rate)
+        stretch_audio = librosa.effects.time_stretch(audio.numpy(), rate=random_rate)
         audio.audio = stretch_audio
 
         return audio
