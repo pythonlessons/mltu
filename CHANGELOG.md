@@ -1,27 +1,31 @@
-## [1.1.7] - 2022-10-30
+## [1.1.8] - 2024-01-02
+### Changed
+- Fixed `setup.py` to include `mltu.torch` and `mltu.tensorflow` packages and other packages that are required for `mltu` to work properly
+
+## [1.1.7] - 2023-10-30
 ### Changed
 - Fixed bug in `mltu.torch.dataProvider.SequenceHandler`, to handle `len sequence < queue_size` case
 
-# [1.1.6] - 2022-10-30
+# [1.1.6] - 2023-10-30
 ### Changed
 - Fixed dependencies with `librosa` library
 
-## [1.1.5] - 2022-10-17
+## [1.1.5] - 2023-10-17
 ### Changed
 - Fixed dependencies with `librosa` library
 
-## [1.1.4] - 2022-09-29
+## [1.1.4] - 2023-09-29
 ### Changed
 - Improoved `mltu.torch.dataProvider.DataProvider` to hangle `multiprocessing` when it doesn't work to switch to `multithreading`
 
-## [1.1.3] - 2022-09-29
+## [1.1.3] - 2023-09-29
 ### Changed
 - Removed `Librosa` library dependency in requirements, now it is optional and required only with modules that use librosa
 
 ### Added
 - Created `Tutorials.05_sound_to_text.train_no_limit.py` that demonstrates how to train audio recognition model with `mltu` without audio length limit
 
-## [1.1.1] - 2022-09-26
+## [1.1.1] - 2023-09-26
 ### Changed
 - Included `self._executor` as generator in `mltu.dataProvider.DataProvider` object, to enable functionality to modify batch preprocessing without changing original code
 - Introduced changes in `mltu.torch.dataProvider.py` to handle data in multiprocessing and multithreading modes, for faster preprocessing while torch models
@@ -31,7 +35,7 @@
 - Created tutorial `10_wav2vec2_torch` (Audio to Text model) that shows how to train wav2vec2 model with mltu
 
 
-## [1.1.0] - 2022-08-28
+## [1.1.0] - 2023-08-28
 ### Changed
 - Changed `mltu.transformers.SpectrogramPadding` object, to pad spectrogram end with zeros instead of start
 
@@ -44,12 +48,12 @@
 - Created `mltu.tensorflow.transformer.utils` module, that contains `MaskedLoss` loss and `MaskedAccuracy` metric, used for training Transformer models
 
 
-## [1.0.15] - 2022-07-15
+## [1.0.15] - 2023-07-15
 ### Changed
 - Fixed bug in `mltu.dataProvider.DataProvider` to work with `batch_postprocessors`.
 
 
-## [1.0.14] - 2022-07-13
+## [1.0.14] - 2023-07-13
 ### Changed
 - Included `augment_annotation` bool option to all `mltu.augmentors` to be able to choose whether to augment annotation or not
 - Changed `mltu.augmentors.RandomRotate` to have `@staticmethod` of `rotate_image` to be able to use it without creating object
@@ -58,11 +62,11 @@
 - Added `batch_postprocessor` option to `mltu.dataProvider.DataProvider` to be able to postprocess batch after augmentation
 
 
-## [1.0.13] - 2022-07-13
+## [1.0.13] - 2023-07-13
 - Removed because of bad build
 
 
-## [1.0.12] - 2022-06-08
+## [1.0.12] - 2023-06-08
 ### Changed
 - Moved `onnx` and `tf2onnx` import inside `mltu.tensorflow.callbacks.Model2onnx` to avoid import errors when not using this callback
 - Removed `onnx` and `tf2onnx` install requirements from global requirements
@@ -71,16 +75,16 @@
 - Added `RandomMirror` and `RandomFlip` augmentors into `mltu.augmentors`
 - Added `u2net` segmentation model into `mltu.tensorflow.models`
 
-## [1.0.11] - 2022-06-07
+## [1.0.11] - 2023-06-07
 ### Changed
 - Downgrade `tf2onnx` and `onnx` versions, they don't work with newest TensorFlow version
 
-## [1.0.10] - 2022-06-06
+## [1.0.10] - 2023-06-06
 ### Changed
 - Updated `BaseModelConfigs` in `mltu.configs.py` to include instance_attributes
 - Some minor changes
 
-## [1.0.9] - 2022-05-24
+## [1.0.9] - 2023-05-24
 ### Changed
 - Fixed styling, changed all string from single quotes to double quotes, corrected comments, etc.
 
@@ -88,17 +92,17 @@
 - Added `CVImage` and `PillowImage` objects in `mltu.annotations.image` to handle image annotations
 
 
-## [1.0.8] - 2022-04-24
+## [1.0.8] - 2023-04-24
 ### Added
 - Added `RandomSaltAndPepper` augmentor into `mltu.augmentors`
 
 
-## [1.0.7] - 2022-04-14
+## [1.0.7] - 2023-04-14
 ### Added
 - Added `SelfAttention` layer into `mltu.tensorflow.layers` to use with Conv2D layers (need more testings).
 
 
-## [1.0.6] - 2022-04-13
+## [1.0.6] - 2023-04-13
 ### Changed
 - Fixed bug in `mltu.dataProvider.DataProvider` object to work without `data_preprocessors` when feeding loaded data in memory
 
@@ -106,13 +110,13 @@
 - Added `RandomGaussianBlur` augmentor into `mltu.augmentors`
 
 
-## [1.0.4] - 2022-03-22
+## [1.0.4] - 2023-03-22
 ### Changed
 - Fix `ImageReader` to work either with image path or `np.ndarray`
 - Added `metadata` support to `callbacks/tf2onnx` when converting to onnx format
 
 
-## [1.0.3] - 2022-03-20
+## [1.0.3] - 2023-03-20
 ### Changed
 - Changed `mltu.augmentors` to work only with `Image` objects
 
@@ -120,7 +124,7 @@
 - Created `Image` object in `mltu.annotations.image` to handle image annotations
 
 
-## [1.0.2] - 2022-03-20
+## [1.0.2] - 2023-03-20
 ### Changed
 - changes `OnnxInferenceModel` in `mltu.torch.inferenceModels` to load custom metadata from saved ONNX model
 - improved `mltu.dataProvider` to remove bad samples from dataset on epoch end
@@ -133,7 +137,7 @@
 - created 08 pytorch tutorial, that shows how to use `mltu.torch` to train CTC based models
 
 
-## [1.0.1] - 2022-03-06
+## [1.0.1] - 2023-03-06
 ### Changed
 - In all tutorials removed stow dependency and replaced with os package, to make it easier to use on Windows 11
 
@@ -146,7 +150,7 @@
 - added `07_pytorch_tutorial` tutorial
 
 
-## [1.0.0] - 2022-03-06
+## [1.0.0] - 2023-03-06
 ### Changed
 - detaching TensorFlow from mltu, now mltu is only a collection of utilities for training machine learning models
 
@@ -155,7 +159,7 @@
 - added `mltu.tensorflow` and `mltu.torch` into built package
 
 
-## [0.1.6] - 2022-02-26
+## [0.1.6] - 2023-02-26
 ### Changed
 - 
 ### Added:
@@ -163,12 +167,12 @@
 - added `WavReader` to `mltu/preprocessors`, used to read wav files and convert them to numpy arrays
 
 
-## [0.1.7] - 2022-02-03
+## [0.1.7] - 2023-02-03
 ### Changed
 - added `mltu.utils` into built package
 
 
-## [0.1.5] - 2022-01-10
+## [0.1.5] - 2023-01-10
 ### Changed
 - seperated `CWERMetric` to `CER` and `WER` Metrics in `mltu.metrics`, Character/word rate was calculatted in a wrong way
 - created @setter for augmentors and transformers in DataProvider, to properlly add augmentors and transformers to the pipeline
@@ -183,12 +187,12 @@
 - created unittests for CER and WER in mltu.utils.text_utils and TensorFlow verion of CER and WER mltu.metrics
 
 
-## [0.1.4] - 2022-12-21
+## [0.1.4] - 2023-12-21
 ### Added:
 - added mltu.augmentors (RandomBrightness, RandomRotate, RandomErodeDilate) - used for simple image augmentation;
 
 
-## [0.1.3] - 2022-12-20
+## [0.1.3] - 2023-12-20
 
 Initial release of mltu (Machine Learning Training Utilities)
 
