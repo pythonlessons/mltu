@@ -1,5 +1,6 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
+
 
 DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -43,7 +44,7 @@ setup(
         "gpu": ["onnxruntime-gpu"],
     },
     python_requires=">=3",
-    packages=["mltu", "mltu.utils", "mltu.torch", "mltu.tensorflow", "mltu.annotations"],
+    packages=find_packages(exclude=("*_test.py",)),
     include_package_data=True,
     project_urls={
         "Source": "https://github.com/pythonlessons/mltu/",
