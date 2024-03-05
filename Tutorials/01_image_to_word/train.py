@@ -7,10 +7,10 @@ except: pass
 
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TensorBoard
 
-from mltu.dataProvider import DataProvider
 from mltu.preprocessors import ImageReader
 from mltu.annotations.images import CVImage
 from mltu.transformers import ImageResizer, LabelIndexer, LabelPadding
+from mltu.tensorflow.dataProvider import DataProvider
 from mltu.tensorflow.losses import CTCloss
 from mltu.tensorflow.callbacks import Model2onnx, TrainLogger
 from mltu.tensorflow.metrics import CWERMetric

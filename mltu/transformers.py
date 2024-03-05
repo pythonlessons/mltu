@@ -1,15 +1,12 @@
 import cv2
 import typing
 import logging
+import importlib
 import numpy as np
-
-try:
-    import librosa
-except:
-    print("librosa not found. Please install it with `pip install librosa` if you plan to use it.")
 
 from . import Image
 from mltu.annotations.audio import Audio
+from mltu.annotations.detections import Detections
 
 """ Implemented Transformers:
 - ExpandDims - Expand dimension of data
@@ -269,10 +266,12 @@ class AudioToSpectrogram(Transformer):
         self.frame_step = frame_step
         self.fft_length = fft_length
 
+        # import librosa using importlib
         try:
-            librosa.__version__
+            self.librosa = importlib.import_module('librosa')
+            print("librosa version:", self.librosa.__version__)
         except ImportError:
-            raise ImportError("librosa is required to transform Audio. Please install it with `pip install librosa`.")
+            raise ImportError("librosa is required to augment Audio. Please install it with `pip install librosa`.")
 
     def __call__(self, audio: Audio, label: typing.Any):
         """Compute the spectrogram of a WAV file
@@ -289,7 +288,7 @@ class AudioToSpectrogram(Transformer):
         # Compute the Short Time Fourier Transform (STFT) of the audio data and store it in the variable 'spectrogram'
         # The STFT is computed with a hop length of 'frame_step' samples, a window length of 'frame_length' samples, and 'fft_length' FFT components.
         # The resulting spectrogram is also transposed for convenience
-        spectrogram = librosa.stft(audio.numpy(), hop_length=self.frame_step, win_length=self.frame_length, n_fft=self.fft_length).T
+        spectrogram = self.librosa.stft(audio.numpy(), hop_length=self.frame_step, win_length=self.frame_length, n_fft=self.fft_length).T
 
         # Take the absolute value of the spectrogram to obtain the magnitude spectrum
         spectrogram = np.abs(spectrogram)
@@ -337,6 +336,11 @@ class ImageShowCV2(Transformer):
         if self.verbose:
             if isinstance(label, (str, int, float)):
                 self.logger.info(f"Label: {label}")
+
+        if isinstance(label, Detections):
+            for detection in label:
+                img = detection.applyToFrame(np.asarray(image.numpy()))
+                image.update(img)
 
         cv2.imshow(self.name, image.numpy())
         if isinstance(label, Image):

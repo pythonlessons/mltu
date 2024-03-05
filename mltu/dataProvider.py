@@ -26,6 +26,7 @@ class DataProvider:
             limit: int = None,
             use_cache: bool = False,
             log_level: int = logging.INFO,
+            numpy: bool = True,
     ) -> None:
         """ Standardised object for providing data to a model while training.
 
@@ -42,6 +43,7 @@ class DataProvider:
             limit (int, optional): Limit the number of samples in the dataset. Defaults to None.
             use_cache (bool, optional): Whether to cache the dataset. Defaults to False.
             log_level (int, optional): The log level. Defaults to logging.INFO.
+            numpy (bool, optional): Whether to convert data to numpy. Defaults to True.
         """
         self._dataset = dataset
         self._data_preprocessors = [] if data_preprocessors is None else data_preprocessors
@@ -57,6 +59,7 @@ class DataProvider:
         self._step = 0
         self._cache = {}
         self._on_epoch_end_remove = []
+        self._numpy = numpy
 
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(log_level)
@@ -242,20 +245,12 @@ class DataProvider:
             for _object in objects:
                 data, annotation = _object(data, annotation)
 
-        try:
-            data = data.numpy()
-            annotation = annotation.numpy()
-        except:
-            pass
-
-        # Convert to numpy array if not already
-        # if not isinstance(data, np.ndarray):
-        #     data = data.numpy()
-
-        # # Convert to numpy array if not already
-        # # TODO: This is a hack, need to fix this
-        # if not isinstance(annotation, (np.ndarray, int, float, str, np.uint8, float)):
-        #     annotation = annotation.numpy()
+        if self._numpy:
+            try:
+                data = data.numpy()
+                annotation = annotation.numpy()
+            except:
+                pass
 
         return data, annotation
 
@@ -288,4 +283,7 @@ class DataProvider:
 
             return batch_data, batch_annotations
 
-        return np.array(batch_data), np.array(batch_annotations)
+        try:
+            return np.array(batch_data), np.array(batch_annotations)
+        except:
+            return batch_data, batch_annotations

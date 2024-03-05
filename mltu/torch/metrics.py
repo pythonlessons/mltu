@@ -20,7 +20,7 @@ class Metric:
         """ Reset metric state to initial values and return metric value"""
         self.__init__()
 
-    def update(self, output: torch.Tensor, target: torch.Tensor):
+    def update(self, output: torch.Tensor, target: torch.Tensor, **kwargs):
         """ Update metric state with new data
         
         Args:
@@ -45,7 +45,7 @@ class Accuracy(Metric):
         self.correct = 0
         self.total = 0
 
-    def update(self, output: torch.Tensor, target: torch.Tensor):
+    def update(self, output: torch.Tensor, target: torch.Tensor, **kwargs):
         """ Update metric state with new data
 
         Args:
@@ -84,7 +84,7 @@ class CERMetric(Metric):
         self.cer = 0
         self.counter = 0
 
-    def update(self, output: torch.Tensor, target: torch.Tensor) -> None:
+    def update(self, output: torch.Tensor, target: torch.Tensor, **kwargs) -> None:
         """ Update metric state with new data
 
         Args:
@@ -137,7 +137,7 @@ class WERMetric(Metric):
         self.wer = 0
         self.counter = 0
 
-    def update(self, output: torch.Tensor, target: torch.Tensor) -> None:
+    def update(self, output: torch.Tensor, target: torch.Tensor, **kwargs) -> None:
         """ Update metric state with new data
 
         Args:

@@ -1,3 +1,25 @@
+## [1.2.0] - 2024-03-05
+### Changed
+- Creating code to work with Ultralytics YoloV8 Detection model (training and inference)
+- Updated previous tutorials to work with the latest mltu changes
+- Updated `mltu.augmentors.RandomRotate` to work with `Detections` objects
+- Changed to use `importlib` to import `librosa` in `mltu.preprocessors` to avoid import errors
+- Changed `mltu.torch.model.Model` object to provide more flexibility in training and validation
+- Improved `mltu.torch.callbacks` to provide more flexibility in training and validation
+
+### Added
+- Added `mltu.torch.detection` module, that contains `Detections` and `Detection` objects, to handle detection annotations
+- Added `RandomDropBlock` and `RandomDropBlock` augmentors into `mltu.augmentors` to work with `Detections` objects
+- Added `ModelEMA` into `mltu.torch.model` to work with EMA (Exponential Moving Average) model
+- Added `FpsWrapper` into `mltu.inferenceModel` to automatically calculate FPS (Frames Per Second) when using inference model
+- Added `mltu.torch.yolo.detector.BaseDetector` as a base class for preprocessing and postprocessing detection models
+- Added `mltu.torch.yolo.detector.onnx_detector.Detector` as a class to handle YoloV8 onnx model detection inference
+- Added `mltu.torch.yolo.detector.torch_detector.Detector` as a class to handle YoloV8 torch model detection inference
+- Added `mltu.torch.yolo.loss.v8DetectionLoss` as a class to handle YoloV8 detection loss in training
+- Added `mltu.torch.yolo.metrics.YoloMetrics` as a class to handle YoloV8 detection metrics in training and validation
+- Added `mltu.torch.yolo.optimizer` module, that contains `AccumulativeOptimizer` object and `build_optimizer` function, to handle YoloV8 detection optimizer in training
+- Added YoloV8 Detection tutorial in `Tutorials.11_yolov8` that shows how to do basic inference with torch and exported onnx models
+
 ## [1.1.8] - 2024-01-02
 ### Changed
 - Fixed `setup.py` to include `mltu.torch` and `mltu.tensorflow` packages and other packages that are required for `mltu` to work properly
