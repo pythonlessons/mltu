@@ -1,15 +1,12 @@
 import cv2
 import typing
 import numpy as np
+import importlib
 import logging
 
 from . import Image
 from mltu.annotations.audio import Audio
-
-try:
-    import librosa
-except:
-    print("librosa not found. Please install it with `pip install librosa` if you plan to use it.")
+from mltu.annotations.detections import Detections, Detection
 
 """ 
 Implemented image augmentors:
@@ -21,6 +18,8 @@ Implemented image augmentors:
 - RandomSaltAndPepper
 - RandomMirror
 - RandomFlip
+- RandomDropBlock
+- RandomMosaic
 
 Implemented audio augmentors:
 - RandomAudioNoise
@@ -183,7 +182,7 @@ class RandomRotate(Augmentor):
         self._borderValue = borderValue
 
     @staticmethod
-    def rotate_image(image: np.ndarray, angle: typing.Union[float, int], borderValue: tuple=(0,0,0)) -> np.ndarray:
+    def rotate_image(image: np.ndarray, angle: typing.Union[float, int], borderValue: tuple=(0,0,0), return_rotation_matrix: bool=False) -> np.ndarray:
         # grab the dimensions of the image and then determine the centre
         height, width = image.shape[:2]
         center_x, center_y = (width // 2, height // 2)
@@ -206,6 +205,9 @@ class RandomRotate(Augmentor):
         # perform the actual rotation and return the image
         img = cv2.warpAffine(image, M, (nW, nH), borderValue=borderValue)
 
+        if return_rotation_matrix:
+            return img, M
+        
         return img
 
     @randomness_decorator
@@ -230,12 +232,17 @@ class RandomRotate(Augmentor):
         borderValue = np.random.randint(0, 255, 3) if self._borderValue is None else self._borderValue
         borderValue = [int(v) for v in borderValue]
 
-        img = self.rotate_image(image.numpy(), angle, borderValue)
+        img, rotMat = self.rotate_image(image.numpy(), angle, borderValue, return_rotation_matrix=True)
 
-        if self._augment_annotation and isinstance(annotation, Image):
-            # perform the actual rotation and return the annotation image
-            annotation_image = self.rotate_image(annotation.numpy(), angle, borderValue=(0, 0, 0))
-            annotation.update(annotation_image)
+        if self._augment_annotation:
+            if isinstance(annotation, Image):
+                # perform the actual rotation and return the annotation image
+                annotation_image = self.rotate_image(annotation.numpy(), angle, borderValue=(0, 0, 0))
+                annotation.update(annotation_image)
+            elif isinstance(annotation, Detections):
+                height, width = img.shape[:2]
+                for detection in annotation:
+                    detection.dot(rotMat, width, height)
 
         image.update(img)
 
@@ -511,6 +518,10 @@ class RandomMirror(Augmentor):
         if self._augment_annotation and isinstance(annotation, Image):
             annotation = annotation.flip(0)
 
+        elif isinstance(annotation, Detections):
+            for detection in annotation:
+                detection.flip(0)
+
         return image, annotation
     
 
@@ -547,8 +558,164 @@ class RandomFlip(Augmentor):
         if self._augment_annotation and isinstance(annotation, Image):
             annotation = annotation.flip(1)
 
+        elif isinstance(annotation, Detections):
+            for detection in annotation:
+                detection.flip(1)
+
         return image, annotation
     
+
+class RandomDropBlock(Augmentor):
+    """ Randomly drop block from image"""
+    def __init__(
+        self, 
+        random_chance: float = 0.5,
+        log_level: int = logging.INFO,
+        augment_annotation: bool = False,
+        block_size_percentage: float = 0.05,
+        keep_prob: float = 0.7,
+        ) -> None:
+        """ Randomly drop block from image
+        
+        Args:
+            random_chance (float): Float between 0.0 and 1.0 setting bounds for random probability. Defaults to 0.5.
+            log_level (int): Log level for the augmentor. Defaults to logging.INFO.
+            augment_annotation (bool): Whether to augment the annotation. Defaults to False.
+            block_size_percentage (float): drop block size percentage relative to image size. Defaults to 0.05.
+            keep_prob (float): Probability of keeping the block. Defaults to 0.7.
+        """
+        super(RandomDropBlock, self).__init__(random_chance, log_level, augment_annotation)
+        self.block_size_percentage = block_size_percentage
+        self.keep_prob = keep_prob
+
+    @staticmethod
+    def dropblock(image, block_percent=0.05, keep_prob=0.7):
+        height, width = image.shape[:2]
+        block_size = int(min(height, width) * block_percent)
+        mask = np.ones((height, width), dtype=bool)
+
+        for i in range(0, height - block_size + 1, block_size):
+            for j in range(0, width - block_size + 1, block_size):
+                if np.random.rand() > keep_prob:
+                    mask[i:i+block_size, j:j+block_size] = False
+
+        dropped_image = image * mask[..., np.newaxis]
+        return dropped_image
+
+    @randomness_decorator
+    def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
+        """ Randomly drop block from image
+
+        Args:
+            image (Image): Image to be dropped
+            annotation (typing.Any): Annotation to be dropped
+
+        Returns:
+            image (Image): Dropped image
+            annotation (typing.Any): Dropped annotation if necessary
+        """
+        img = self.dropblock(image.numpy(), self.block_size_percentage, self.keep_prob)
+        image.update(img)
+
+        return image, annotation
+    
+
+class RandomMosaic(Augmentor):
+    def __init__(
+        self, 
+        random_chance: float = 0.5,
+        log_level: int = logging.INFO,
+        augment_annotation: bool = True,
+        target_size: typing.Tuple[int, int] = None,
+        ) -> None:
+        """ Randomly merge 4 images into one mosaic image
+        
+        Args:
+            random_chance (float): Float between 0.0 and 1.0 setting bounds for random probability. Defaults to 0.5.
+            log_level (int): Log level for the augmentor. Defaults to logging.INFO.
+            augment_annotation (bool): Whether to augment the annotation. Defaults to False.
+            target_size (tuple): Tuple of 2 integers, setting target size for mosaic image. Defaults to None.
+        """
+        super(RandomMosaic, self).__init__(random_chance, log_level, augment_annotation)
+        self.target_size = target_size
+        self.images = []
+        self.annotations = []
+
+    @randomness_decorator
+    def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
+        """ R
+
+        Args:
+            image (Image): Image to be used for mosaic
+            annotation (typing.Any): Annotation to be used for mosaic
+
+        Returns:
+            image (Image): Mosaic image
+            annotation (typing.Any): Mosaic annotation if necessary
+        """
+        if not isinstance(annotation, Detections):
+            self.logger.error(f"annotation must be Detections object, not {type(annotation)}, skipping augmentor")
+            return image, annotation
+
+        self.images.append(image.numpy())
+        self.annotations.append(annotation)
+
+        if len(self.images) >= 4:
+            # merge images and annotations into one image and annotation
+            if self.target_size is None:
+                # pick smalles target size and resize all images to that size
+                target_size = (min([img.shape[0] for img in self.images]), min([img.shape[1] for img in self.images]))
+            else:
+                target_size = self.target_size
+
+            images = [cv2.resize(img, target_size) for img in self.images[:4]]
+            detections = []
+            new_img = np.concatenate([
+                np.concatenate(images[:2], axis=1), 
+                np.concatenate(images[2:4], axis=1)
+            ], axis=0)
+            
+            height, width = new_img.shape[:2]
+            for index, annotation in enumerate(self.annotations[:4]):
+                if isinstance(annotation, Detections):
+                    for detection in annotation:
+                        xywh = np.array(detection.xywh) / 2
+
+                        if index in [1, 3]:
+                            xywh[0] = xywh[0] + 0.5
+
+                        if index in [2, 3]:
+                            xywh[1] = xywh[1] + 0.5
+
+                        new_detection = Detection(
+                            xywh, 
+                            label=detection.label, 
+                            labels=detection.labels,
+                            bbox_type=detection.bbox_type,
+                            confidence=detection.confidence, 
+                            image_path=detection.image_path, 
+                            width=width, 
+                            height=height,
+                            relative=detection.relative
+                        )
+                        detections.append(new_detection)
+
+            new_detections = Detections(
+                labels=annotation.labels,
+                width=width,
+                height=height,
+                detections=detections
+            )
+                    
+            image.update(new_img)
+
+            self.images = self.images[4:]
+            self.annotations = self.annotations[4:]
+
+            return image, new_detections
+
+        return image, annotation
+
 
 class RandomAudioNoise(Augmentor):
     """ Randomly add noise to audio
@@ -596,15 +763,17 @@ class RandomAudioPitchShift(Augmentor):
         super(RandomAudioPitchShift, self).__init__(random_chance, log_level, augment_annotation)
         self.max_n_steps = max_n_steps
 
+        # import librosa using importlib
         try:
-            librosa.__version__
+            self.librosa = importlib.import_module('librosa')
+            print("librosa version:", self.librosa.__version__)
         except ImportError:
             raise ImportError("librosa is required to augment Audio. Please install it with `pip install librosa`.")
 
     def augment(self, audio: Audio) -> Audio:
         random_n_steps = np.random.randint(-self.max_n_steps, self.max_n_steps)
         # changing default res_type "kaiser_best" to "linear" for speed and memory efficiency
-        shift_audio = librosa.effects.pitch_shift(
+        shift_audio = self.librosa.effects.pitch_shift(
             audio.numpy(), sr=audio.sample_rate, n_steps=random_n_steps, res_type="linear"
             )
         audio.audio = shift_audio

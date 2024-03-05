@@ -11,11 +11,11 @@ class ImageToWordModel(OnnxInferenceModel):
         self.char_list = char_list
 
     def predict(self, image: np.ndarray):
-        image = cv2.resize(image, self.input_shape[:2][::-1])
+        image = cv2.resize(image, self.input_shapes[0][1:3][::-1])
 
         image_pred = np.expand_dims(image, axis=0).astype(np.float32)
 
-        preds = self.model.run(None, {self.input_name: image_pred})[0]
+        preds = self.model.run(self.output_names, {self.input_names[0]: image_pred})[0]
 
         text = ctc_decoder(preds, self.char_list)[0]
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     accum_cer = []
     for image_path, label in tqdm(df[:20]):
-        image = cv2.imread(image_path)
+        image = cv2.imread(image_path.replace("\\", "/"))
 
         try:
             prediction_text = model.predict(image)

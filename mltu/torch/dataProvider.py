@@ -150,6 +150,7 @@ class DataProvider(BaseDataProvider):
             workers: int = os.cpu_count(),
             use_multiprocessing: bool = False,
             max_queue_size: int = 5,
+            **kwargs
         ):
         """ Standardised object for providing data to a model while training.
 
@@ -171,7 +172,7 @@ class DataProvider(BaseDataProvider):
         """
         super(DataProvider, self).__init__(dataset=dataset, data_preprocessors=data_preprocessors, batch_size=batch_size, 
                                            shuffle=shuffle, initial_epoch=initial_epoch, augmentors=augmentors, transformers=transformers, batch_postprocessors=batch_postprocessors,
-                                           skip_validation=skip_validation, limit=limit, use_cache=use_cache)
+                                           skip_validation=skip_validation, limit=limit, use_cache=use_cache, **kwargs)
         self.workers = workers
         self.use_multiprocessing = use_multiprocessing
         self.max_queue_size = max_queue_size

@@ -18,31 +18,33 @@ class MetricsHandler:
         self.val_results_dict = {"val_loss": None}
         self.val_results_dict.update({"val_" + metric.name: None for metric in self.metrics})
 
-    def update(self, target, output):
+    def update(self, target, output, **kwargs):
         for metric in self.metrics:
-            metric.update(output, target)
+            metric.update(output, target, **kwargs)
 
     def reset(self):
         for metric in self.metrics:
             metric.reset()
 
     def results(self, loss, train: bool=True):
-        if train:
-            self.train_results_dict["loss"] = loss
-            for metric in self.metrics:
-                self.train_results_dict[metric.name] = metric.result()
-            return self.train_results_dict
-        
-        self.val_results_dict["val_loss"] = loss
+        suffix = "val_" if not train else ""
+        results_dict = self.val_results_dict if not train else self.train_results_dict
+        results_dict[suffix + "loss"] = loss
         for metric in self.metrics:
-            self.val_results_dict["val_" + metric.name] = metric.result()  
-        return self.val_results_dict
+            result = metric.result()
+            if result:
+                if isinstance(result, dict):
+                    for k, v in result.items():
+                        results_dict[suffix + k] = v
+                else:
+                    results_dict[suffix + metric.name] = result
+
+        return {k: round(v, 4) for k, v in results_dict.items() if v}
     
     def description(self, epoch: int=None, train: bool=True):
         epoch_desc = f"Epoch {epoch} - " if epoch is not None else "          "
         dict = self.train_results_dict if train else self.val_results_dict
-        
-        return epoch_desc + " - ".join([f"{k}: {v:.4f}" for k, v in dict.items()])
+        return epoch_desc + " - ".join([f"{k}: {v:.4f}" for k, v in dict.items() if v])
     
 
 class CallbacksHandler:

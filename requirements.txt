@@ -1,5 +1,6 @@
 PyYAML>=6.0
 tqdm
+qqdm==0.0.7
 pandas
 numpy
 opencv-python
