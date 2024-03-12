@@ -39,7 +39,8 @@ class MetricsHandler:
                 else:
                     results_dict[suffix + metric.name] = result
 
-        return {k: round(v, 4) for k, v in results_dict.items() if v}
+        logs = {k: round(v, 4) for k, v in results_dict.items() if v is not None}
+        return logs
     
     def description(self, epoch: int=None, train: bool=True):
         epoch_desc = f"Epoch {epoch} - " if epoch is not None else "          "
