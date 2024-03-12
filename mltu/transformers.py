@@ -13,6 +13,7 @@ from mltu.annotations.detections import Detections
 - ImageResizer - Resize image to (width, height)
 - LabelIndexer - Convert label to index by vocab
 - LabelPadding - Pad label to max_word_length
+- ImageNormalizer - Normalize image to float value, transpose axis if necessary and convert to numpy
 - SpectrogramPadding - Pad spectrogram to max_spectrogram_length
 - AudioToSpectrogram - Convert Audio to Spectrogram
 - ImageShowCV2 - Show image for visual inspection
@@ -169,6 +170,28 @@ class LabelPadding(Transformer):
 
         label = label[:self.max_word_length]
         return data, np.pad(label, (0, self.max_word_length - len(label)), "constant", constant_values=self.padding_value)
+
+
+class ImageNormalizer:
+    """ Normalize image to float value, transpose axis if necessary and convert to numpy
+    """
+    def __init__(self, transpose_axis: bool=False):
+        """ Initialize ImageNormalizer
+
+        Args:
+            transpose_axis (bool): Whether to transpose axis. Default: False
+        """
+        self.transpose_axis = transpose_axis
+    
+    def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[np.ndarray, typing.Any]:
+        """ Convert each Image to numpy, transpose axis ant normalize to float value
+        """
+        img = image.numpy() / 255.0
+
+        if self.transpose_axis:
+            img = img.transpose(2, 0, 1)
+        
+        return img, annotation
 
 
 class SpectrogramPadding(Transformer):

@@ -169,6 +169,7 @@ class DataProvider(BaseDataProvider):
             workers (int, optional): Number of workers to use for multiprocessing or multithreading. Defaults to os.cpu_count().
             use_multiprocessing (bool, optional): Whether to use multiprocessing or multithreading. Defaults to multithreading (False).
             max_queue_size (int, optional): Maximum size of the queue. Defaults to 5.
+            numpy (bool, optional): Whether to convert data to numpy. Defaults to True.
         """
         super(DataProvider, self).__init__(dataset=dataset, data_preprocessors=data_preprocessors, batch_size=batch_size, 
                                            shuffle=shuffle, initial_epoch=initial_epoch, augmentors=augmentors, transformers=transformers, batch_postprocessors=batch_postprocessors,

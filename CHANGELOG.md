@@ -1,3 +1,12 @@
+## [1.2.1] - 2024-03-12
+### Changed
+- Fixed many minor bugs
+
+### Added
+- Added `mltu.transformers.ImageNormalizer` to normalize and transpose images
+- Added `mltu.torch.yolo.annotation.VOCAnnotationReader` to read VOC annotation files
+- Added `mltu.torch.yolo.preprocessors.YoloPreprocessor` to preprocess images and annotations for YoloV8 detection model
+
 ## [1.2.0] - 2024-03-05
 ### Changed
 - Creating code to work with Ultralytics YoloV8 Detection model (training and inference)

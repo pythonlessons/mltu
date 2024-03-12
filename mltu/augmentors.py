@@ -691,12 +691,11 @@ class RandomMosaic(Augmentor):
                             xywh, 
                             label=detection.label, 
                             labels=detection.labels,
-                            bbox_type=detection.bbox_type,
                             confidence=detection.confidence, 
                             image_path=detection.image_path, 
                             width=width, 
                             height=height,
-                            relative=detection.relative
+                            relative=True
                         )
                         detections.append(new_detection)
 

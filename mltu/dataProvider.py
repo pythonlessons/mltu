@@ -225,7 +225,7 @@ class DataProvider:
 
     def process_data(self, batch_data):
         """ Process data batch of data """
-        if self._use_cache and batch_data[0] in self._cache:
+        if self._use_cache and batch_data[0] in self._cache and isinstance(batch_data[0], str):
             data, annotation = copy.deepcopy(self._cache[batch_data[0]])
         else:
             data, annotation = batch_data
