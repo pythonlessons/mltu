@@ -114,6 +114,9 @@ class Detection:
             if self.width is None or self.height is None:
                 raise ValueError("width and height must be provided when relative is False")
             
+            if (np.array(self.bbox) > 1.0).any():
+                raise ValueError("bbox coordinates must be in range [0, 1] when relative is False")
+            
             bbox = np.array(self.bbox) / np.array([self.width, self.height, self.width, self.height])
 
         else:
@@ -132,11 +135,14 @@ class Detection:
             raise ValueError(f"bbox_type {self.bbox_type} not supported")
         
     def flip(self, direction: int):
+        new_xywh = self.xywh
         if direction == 0: # mirror
-            self._xywh[0] = 1 - self._xywh[0]
+            new_xywh[0] = 1 - new_xywh[0]
 
         elif direction == 1: # vertical
-            self._xywh[1] = 1 - self._xywh[1]
+            new_xywh[1] = 1 - new_xywh[1]
+
+        self.xywh = new_xywh
         
         self.augmented = True
 
@@ -175,7 +181,7 @@ class Detection:
         new_w /= width
         new_h /= height
 
-        self._xywh = np.array([new_x, new_y, new_w, new_h])
+        self.xywh = np.array([new_x, new_y, new_w, new_h])
 
         self.width = width
         self.height = height
