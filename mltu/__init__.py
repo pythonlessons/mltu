@@ -1,4 +1,4 @@
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 
 from .annotations.images import Image
 from .annotations.images import CVImage

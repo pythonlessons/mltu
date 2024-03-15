@@ -177,13 +177,15 @@ class Model:
     def train_step(
         self, 
         data: typing.Union[np.ndarray, torch.Tensor], 
-        target: typing.Union[np.ndarray, torch.Tensor]
+        target: typing.Union[np.ndarray, torch.Tensor],
+        loss_info: dict = {}
         ) -> torch.Tensor:
         """ Perform one training step
 
         Args:
             data (typing.Union[np.ndarray, torch.Tensor]): training data
             target (typing.Union[np.ndarray, torch.Tensor]): training target
+            loss_info (dict, optional): additional loss information. Defaults to {}.
 
         Returns:
             torch.Tensor: loss
@@ -228,13 +230,15 @@ class Model:
     def test_step(
         self, 
         data: typing.Union[np.ndarray, torch.Tensor], 
-        target: typing.Union[np.ndarray, torch.Tensor]
+        target: typing.Union[np.ndarray, torch.Tensor],
+        loss_info: dict = {}
         ) -> torch.Tensor:
         """ Perform one validation step
 
         Args:
             data (typing.Union[np.ndarray, torch.Tensor]): validation data
             target (typing.Union[np.ndarray, torch.Tensor]): validation target
+            loss_info (dict, optional): additional loss information. Defaults to {}.
 
         Returns:
             torch.Tensor: loss

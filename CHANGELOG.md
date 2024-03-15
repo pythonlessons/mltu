@@ -1,3 +1,11 @@
+## [1.2.2] - 2024-03-15
+### Changed
+- Bug fixed with `loss_info` local variable in `mltu.torch.model.Model` object
+
+### Added
+- Added `RandomColorMode` and `RandomZoom` into `mltu.augmentors`
+
+
 ## [1.2.1] - 2024-03-12
 ### Changed
 - Fixed many minor bugs
