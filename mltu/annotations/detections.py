@@ -114,8 +114,8 @@ class Detection:
             if self.width is None or self.height is None:
                 raise ValueError("width and height must be provided when relative is False")
             
-            if (np.array(self.bbox) > 1.0).any():
-                raise ValueError("bbox coordinates must be in range [0, 1] when relative is False")
+            if not (np.array(self.bbox) > 1.0).any():
+                raise ValueError("bbox coordinates must be in range [0, np.inf] when relative is False")
             
             bbox = np.array(self.bbox) / np.array([self.width, self.height, self.width, self.height])
 

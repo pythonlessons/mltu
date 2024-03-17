@@ -49,7 +49,7 @@ class Detector(OnnxInferenceModel, BaseDetector):
         # Perform inference on the preprocessed image
         preds = self.model.run(self.output_names, {self.input_names[0]: preprocessed_image})
 
-        # Convert torch tensor to numpy array
+        # Extract the results from the predictions
         results = preds[0][0]
 
         # Calculate the scaling factors for the bounding box coordinates
