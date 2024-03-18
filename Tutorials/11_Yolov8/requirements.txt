@@ -1,5 +1,6 @@
-ultralytics==8.1.9
-torch==2.1.1
+mltu==1.2.3
+ultralytics==8.1.28
+torch==2.0.0
 torchvision==0.15.1
-onnxruntime
-onnx
+onnxruntime==1.15.1
+onnx==1.12.0
