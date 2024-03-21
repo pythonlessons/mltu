@@ -86,11 +86,11 @@ model.summary(line_length=110)
 os.makedirs(configs.model_path, exist_ok=True)
 
 # Define callbacks
-earlystopper = EarlyStopping(monitor="val_CER", patience=50, verbose=1)
+earlystopper = EarlyStopping(monitor="val_CER", patience=50, verbose=1, mode="min")
 checkpoint = ModelCheckpoint(f"{configs.model_path}/model.h5", monitor="val_CER", verbose=1, save_best_only=True, mode="min")
 trainLogger = TrainLogger(configs.model_path)
 tb_callback = TensorBoard(f"{configs.model_path}/logs", update_freq=1)
-reduceLROnPlat = ReduceLROnPlateau(monitor="val_CER", factor=0.9, min_delta=1e-10, patience=20, verbose=1, mode="auto")
+reduceLROnPlat = ReduceLROnPlateau(monitor="val_CER", factor=0.9, min_delta=1e-10, patience=20, verbose=1, mode="min")
 model2onnx = Model2onnx(f"{configs.model_path}/model.h5")
 
 # Train the model

@@ -1,6 +1,9 @@
 import cv2
+import time
+import queue
 import typing
 import logging
+import threading
 import importlib
 import numpy as np
 
@@ -344,6 +347,26 @@ class ImageShowCV2(Transformer):
         super(ImageShowCV2, self).__init__(log_level=log_level)
         self.verbose = verbose
         self.name = name
+        self.thread_started = False
+
+    def init_thread(self):
+        if not self.thread_started:
+            self.thread_started = True
+            self.image_queue = queue.Queue()
+
+            # Start a new thread to display the images, so that the main loop could run in multiple threads
+            self.thread = threading.Thread(target=self._display_images)
+            self.thread.start()
+
+    def _display_images(self) -> None:
+        """ Display images in a continuous loop """
+        while True:
+            image, label = self.image_queue.get()
+            if isinstance(label, Image):
+                cv2.imshow(self.name + "Label", label.numpy())
+            cv2.imshow(self.name, image.numpy())
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
 
     def __call__(self, image: Image, label: typing.Any) -> typing.Tuple[Image, typing.Any]:
         """ Show image for visual inspection
@@ -356,6 +379,9 @@ class ImageShowCV2(Transformer):
             data (np.ndarray): Image data
             label (np.ndarray): Label data (unchanged)
         """
+        # Start cv2 image display thread
+        self.init_thread()
+
         if self.verbose:
             if isinstance(label, (str, int, float)):
                 self.logger.info(f"Label: {label}")
@@ -365,10 +391,12 @@ class ImageShowCV2(Transformer):
                 img = detection.applyToFrame(np.asarray(image.numpy()))
                 image.update(img)
 
-        cv2.imshow(self.name, image.numpy())
-        if isinstance(label, Image):
-            cv2.imshow(self.name+"Label", label.numpy())
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # Add image to display queue
+        # Sleep if queue is not empty
+        while not self.image_queue.empty():
+            time.sleep(0.5)
+
+        # Add image to display queue
+        self.image_queue.put((image, label))
 
         return image, label

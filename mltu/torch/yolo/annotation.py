@@ -10,9 +10,10 @@ class VOCAnnotationReader:
     def __init__(self, labels: dict, images_path: str=None):
         self.labels = labels
         self.images_path = images_path
+        self.dataset_found_labels = {}
 
     @staticmethod
-    def readFromVOC(voc_annotation_path: str, labels: dict, images_path: str=None) -> Detections:
+    def readFromVOC(voc_annotation_path: str, labels: dict={}, images_path: str=None) -> Detections:
         annotation_path = Path(voc_annotation_path)
         tree = ET.parse(voc_annotation_path)
         root = tree.getroot()
@@ -49,7 +50,7 @@ class VOCAnnotationReader:
         image_path = os.path.join(images_path, annotation_dict['filename'])
         dets = []
         for obj in annotation_dict['objects']:
-            if obj['name'] not in labels.values():
+            if labels and obj['name'] not in labels.values():
                 print(f"Label {obj['name']} not found in labels")
                 continue
 

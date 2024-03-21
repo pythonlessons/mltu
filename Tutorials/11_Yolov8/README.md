@@ -105,7 +105,6 @@ onnx.save(onnx_model, "yolov8m.onnx")
 ## Run the YOLOv8 ONNX model with ONNX Runtime:
 ```python
 import cv2
-from ultralytics.engine.model import Model as BaseModel
 from mltu.torch.yolo.detectors.onnx_detector import Detector as OnnxDetector
 
 input_width, input_height = 640, 640
