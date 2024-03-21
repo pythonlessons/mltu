@@ -5,7 +5,7 @@ from mltu.preprocessors import ImageReader
 from mltu.annotations.images import CVImage
 from mltu.transformers import ImageResizer, ImageShowCV2, ImageNormalizer
 from mltu.augmentors import RandomBrightness, RandomRotate, RandomErodeDilate, RandomSharpen, \
-    RandomMirror, RandomFlip, RandomGaussianBlur, RandomSaltAndPepper, RandomDropBlock, RandomMosaic
+    RandomMirror, RandomFlip, RandomGaussianBlur, RandomSaltAndPepper, RandomDropBlock, RandomMosaic, RandomElasticTransform
 from mltu.torch.model import Model
 from mltu.torch.dataProvider import DataProvider
 from mltu.torch.yolo.annotation import VOCAnnotationReader
@@ -21,6 +21,7 @@ from ultralytics.engine.model import Model as BaseModel
 
 annotations_path = "Datasets/car-plate-detection/annotations"
 
+# Create a dataset from the annotations, the dataset is a list of lists where each list contains the [image path, annotation path]
 dataset = [[None, os.path.join(annotations_path, f)] for f in os.listdir(annotations_path)]
 
 # Make sure torch can see GPU device, it is not recommended to train with CPU
@@ -49,9 +50,6 @@ data_provider = DataProvider(
     numpy=False,
 )
 
-# for b in data_provider:
-#     pass
-
 # split the dataset into train and test
 train_data_provider, val_data_provider = data_provider.split(0.9, shuffle=False)
 
@@ -62,19 +60,13 @@ train_data_provider.augmentors = [
     RandomSharpen(),
     RandomMirror(),
     RandomFlip(),
+    RandomElasticTransform(),
     RandomGaussianBlur(),
     RandomSaltAndPepper(),
     RandomRotate(angle=10),
     RandomDropBlock(),
     RandomMosaic(),
 ]
-
-# for batch in train_data_provider:
-#     pass
-    # print(batch)
-    # break
-
-
 
 base_model = BaseModel("yolov8n.pt")
 # Create a YOLO model

@@ -82,6 +82,10 @@ class Detection:
     @property
     def xyxy(self):
         return self._xyxy
+    
+    @property
+    def xyxy_abs(self):
+        return (self.xyxy * np.array([self.width, self.height, self.width, self.height])).astype(int)
 
     @staticmethod
     def xywh2xyxy(xywh: np.ndarray):
@@ -274,6 +278,9 @@ class Detections:
 
         if isinstance(self.labels, list):
             self.labels = {i: label for i, label in enumerate(self.labels)}
+
+        if not self.labels:
+            self.labels = {k: v for k, v in enumerate(sorted(set([detection.label for detection in self.detections])))}
 
     def applyToFrame(self, image: np.ndarray, **kwargs: dict) -> np.ndarray:
         """ Draw the detections on the image """

@@ -1,3 +1,12 @@
+## [1.2.4] - 2024-03-21
+### Added
+- Added `RandomElasticTransform` to `mltu.augmentors` to work with `Image` objects
+- Added `xyxy_abs` to `mltu.annotations.detections.Detection` object to return absolute bounding boxes
+
+### Changes
+- Changed `ImageShowCV2` transformer in `mltu.transformers` to display images when running with multiple threads
+
+
 ## [1.2.3] - 2024-03-17
 ### Added
 - Added Tutorial how to run YOLOv8 pretrained Object Detection model `Tutorials.11_Yolov8.README.md`

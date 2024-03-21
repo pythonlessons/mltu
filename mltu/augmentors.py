@@ -22,6 +22,7 @@ Implemented image augmentors:
 - RandomMosaic
 - RandomZoom
 - RandomColorMode
+- RandomElasticTransform
 
 Implemented audio augmentors:
 - RandomAudioNoise
@@ -494,14 +495,14 @@ class RandomMirror(Augmentor):
         self, 
         random_chance: float = 0.5,
         log_level: int = logging.INFO,
-        augment_annotation: bool = False,
+        augment_annotation: bool = True,
         ) -> None:
         """ Randomly mirror image
         
         Args:
             random_chance (float): Float between 0.0 and 1.0 setting bounds for random probability. Defaults to 0.5.
             log_level (int): Log level for the augmentor. Defaults to logging.INFO.
-            augment_annotation (bool): Whether to augment the annotation. Defaults to False.
+            augment_annotation (bool): Whether to augment the annotation. Defaults to True.
         """
         super(RandomMirror, self).__init__(random_chance, log_level, augment_annotation)
 
@@ -534,14 +535,14 @@ class RandomFlip(Augmentor):
         self, 
         random_chance: float = 0.5,
         log_level: int = logging.INFO,
-        augment_annotation: bool = False,
+        augment_annotation: bool = True,
         ) -> None:
         """ Randomly mirror image
         
         Args:
             random_chance (float): Float between 0.0 and 1.0 setting bounds for random probability. Defaults to 0.5.
             log_level (int): Log level for the augmentor. Defaults to logging.INFO.
-            augment_annotation (bool): Whether to augment the annotation. Defaults to False.
+            augment_annotation (bool): Whether to augment the annotation. Defaults to True.
         """
         super(RandomFlip, self).__init__(random_chance, log_level, augment_annotation)
 
@@ -838,6 +839,110 @@ class RandomColorMode(Augmentor):
 
         return image, annotation
     
+
+class RandomElasticTransform(Augmentor):
+    """ Randomly apply elastic transform to an image
+    
+    Attributes:
+        random_chance (float): Float between 0.0 and 1.0 setting bounds for random probability. Defaults to 0.5.
+        alpha_range (tuple): Tuple of 2 floats, setting bounds for random alpha value. Defaults to (0, 0.1).
+        sigma_range (tuple): Tuple of 2 floats, setting bounds for random sigma value. Defaults to (0.01, 0.02).
+        log_level (int): Log level for the augmentor. Defaults to logging.INFO.
+        augment_annotation (bool): Whether to augment the annotation. Defaults to False.
+    """
+    def __init__(
+        self, 
+        random_chance: float = 0.5,
+        alpha_range: tuple = (0, 0.1),
+        sigma_range: tuple = (0.01, 0.02),
+        log_level: int = logging.INFO,
+        augment_annotation: bool = True,
+        ) -> None:
+        super(RandomElasticTransform, self).__init__(random_chance, log_level, augment_annotation)
+        self.alpha_range = alpha_range
+        self.sigma_range = sigma_range
+
+    @staticmethod
+    def elastic_transform(image: np.ndarray, alpha: float, sigma: float) -> typing.Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """ Apply elastic transform to an image
+
+        Args:
+            image (np.ndarray): Image to be used for elastic transform
+            alpha (float): Alpha value for elastic transform
+            sigma (float): Sigma value for elastic transform
+
+        Returns:
+            remap_fn (np.ndarray): Elastic transformed image
+            dx (np.ndarray): X-axis displacement
+            dy (np.ndarray): Y-axis displacement
+        """
+        height, width, channels = image.shape
+        dx = np.random.rand(height, width).astype(np.float32) * 2 - 1
+        dy = np.random.rand(height, width).astype(np.float32) * 2 - 1
+
+        cv2.GaussianBlur(dx, (0, 0), sigma, dst=dx)
+        cv2.GaussianBlur(dy, (0, 0), sigma, dst=dy)
+
+        dx *= alpha
+        dy *= alpha
+
+        x, y = np.meshgrid(np.arange(width), np.arange(height))
+
+        map_x = np.float32(x + dx)
+        map_y = np.float32(y + dy)
+
+        remap_fn = cv2.remap(image, map_x, map_y, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
+
+        return remap_fn, dx, dy
+
+    @randomness_decorator
+    def __call__(self, image: Image, annotation: typing.Any) -> typing.Tuple[Image, typing.Any]:
+        """ Randomly apply elastic transform to an image
+
+        Args:
+            image (Image): Image to be used for elastic transform
+            annotation (typing.Any): Annotation to be used for elastic transform
+
+        Returns:
+            image (Image): Elastic transformed image
+            annotation (typing.Any): Elastic transformed annotation if necessary
+        """
+        alpha = image.width * np.random.uniform(*self.alpha_range)
+        sigma = image.width * np.random.uniform(*self.sigma_range)
+        new_image, dx, dy = self.elastic_transform(image.numpy(), alpha, sigma)
+        image.update(new_image)
+
+        if isinstance(annotation, Detections) and self._augment_annotation:
+            detections = []
+            for detection in annotation:
+                x_min, y_min, x_max, y_max = detection.xyxy_abs
+                new_x_min = min(max(0, x_min + dx[y_min, x_min]), image.width - 1)
+                new_y_min = min(max(0, y_min + dy[y_min, x_min]), image.height - 1)
+                new_x_max = min(max(0, x_max + dx[y_max, x_max]), image.width - 1)
+                new_y_max = min(max(0, y_max + dy[y_max, x_max]), image.height - 1)
+                detections.append(
+                    Detection(
+                        [new_x_min, new_y_min, new_x_max, new_y_max],
+                        label=detection.label, 
+                        labels=detection.labels,
+                        confidence=detection.confidence, 
+                        image_path=detection.image_path, 
+                        width=image.width, 
+                        height=image.height,
+                        relative=False,
+                        bbox_type = BboxType.XYXY
+                    )
+                )
+            
+            annotation = Detections(
+                labels=annotation.labels,
+                width=image.width,
+                height=image.height,
+                detections=detections
+            )
+
+        return image, annotation
+
 
 class RandomAudioNoise(Augmentor):
     """ Randomly add noise to audio

@@ -55,7 +55,7 @@ class CWERMetric(tf.keras.metrics.Metric):
         self.cer_accumulator.assign_add(tf.reduce_sum(distance))
         
         # Increment the batch_counter by the batch size
-        self.batch_counter.assign_add(len(y_true))
+        self.batch_counter.assign_add(input_shape[0])
 
         # Calculate the number of wrong words in batch and add to wer_accumulator variable
         self.wer_accumulator.assign_add(tf.reduce_sum(tf.cast(tf.not_equal(distance, 0), tf.float32)))
@@ -146,7 +146,7 @@ class CERMetric(tf.keras.metrics.Metric):
         self.cer_accumulator.assign_add(tf.reduce_sum(distance))
         
         # Increment the batch_counter by the batch size
-        self.batch_counter.assign_add(len(y_true))
+        self.batch_counter.assign_add(input_shape[0])
 
     def result(self):
         """ Computes and returns the metric result.
@@ -253,7 +253,7 @@ class WERMetric(tf.keras.metrics.Metric):
         self.wer_accumulator.assign_add(tf.reduce_sum(tf.cast(distance, tf.float32)))
 
         # Increment the batch_counter by the batch size
-        self.batch_counter.assign_add(len(y_true))
+        self.batch_counter.assign_add(input_shape[0])
 
     def result(self):
         """Computes and returns the metric result.
