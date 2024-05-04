@@ -1,12 +1,13 @@
 import torch
+import typing
 import numpy as np
 
 class YoloPreprocessor:
-    def __init__(self, device, imgsz=640):
+    def __init__(self, device: torch.device, imgsz: int=640):
         self.device = device
         self.imgsz = imgsz
 
-    def __call__(self, images, annotations):
+    def __call__(self, images, annotations) -> typing.Tuple[np.ndarray, dict]:
         batch = {
             "ori_shape": [],
             "resized_shape": [],
@@ -23,8 +24,8 @@ class YoloPreprocessor:
                 batch["bboxes"].append(detection.xywh)
                 batch["batch_idx"].append(i)
 
-        batch["cls"] = torch.tensor(batch["cls"]).to(self.device)
-        batch["bboxes"] = torch.tensor(batch["bboxes"]).to(self.device)
-        batch["batch_idx"] = torch.tensor(batch["batch_idx"]).to(self.device)
+        batch["cls"] = torch.tensor(np.array(batch["cls"])).to(self.device)
+        batch["bboxes"] = torch.tensor(np.array(batch["bboxes"])).to(self.device)
+        batch["batch_idx"] = torch.tensor(np.array(batch["batch_idx"])).to(self.device)
 
         return np.array(images), batch
