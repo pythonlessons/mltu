@@ -1,4 +1,4 @@
-mltu==1.2.3
+mltu==1.2.5
 ultralytics==8.1.28
 torch==2.0.0
 torchvision==0.15.1

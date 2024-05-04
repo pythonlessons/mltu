@@ -13,12 +13,12 @@ from mltu.torch.yolo.preprocessors import YoloPreprocessor
 from mltu.torch.yolo.loss import v8DetectionLoss
 from mltu.torch.yolo.metrics import YoloMetrics
 from mltu.torch.yolo.optimizer import build_optimizer, AccumulativeOptimizer
-from mltu.torch.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TensorBoard, Model2onnx, WarmupCosineDecay
+from mltu.torch.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard, Model2onnx, WarmupCosineDecay
 
 from ultralytics.nn.tasks import DetectionModel
 from ultralytics.engine.model import Model as BaseModel
 
-
+# https://www.kaggle.com/datasets/andrewmvd/car-plate-detection
 annotations_path = "Datasets/car-plate-detection/annotations"
 
 # Create a dataset from the annotations, the dataset is a list of lists where each list contains the [image path, annotation path]
@@ -72,6 +72,7 @@ base_model = BaseModel("yolov8n.pt")
 # Create a YOLO model
 model = DetectionModel('yolov8n.yaml', nc=len(labels))
 
+# Load the weight from base model
 try: model.load_state_dict(base_model.model.state_dict(), strict=False)
 except: pass
 
@@ -95,7 +96,7 @@ model = Model(
     v8DetectionLoss(model), 
     metrics=[YoloMetrics(nc=len(labels))],
     log_errors=False,
-    output_path=f"Models/detector/{int(time.time())}",
+    output_path=f"Models/11_Yolov8/{int(time.time())}",
     clip_grad_norm=10.0,
     ema=True,
 )
