@@ -1,3 +1,14 @@
+## [1.2.5] - 2024-05-04
+### Added
+- Added exception in `mltu.dataProvider.DataProvider` to raise ValueError when dataset is not iterable
+- Added custom training code for YoloV8 object detector: `Tutorials\11_Yolov8\train_yolov8.py`
+- Added custom trained inference code for YoloV8 object detector:`Tutorials\11_Yolov8\test_yolov8.py`
+
+### Changed
+- Fixed `RandomElasticTransform` in `mltu.augmentors` to handle elastic transformation not to exceed image boundaries
+- Modified `YoloPreprocessor` in `mltu.torch.yolo.preprocessors` to output dictionary with np.arrays istead of lists
+
+
 ## [1.2.4] - 2024-03-21
 ### Added
 - Added `RandomElasticTransform` to `mltu.augmentors` to work with `Image` objects

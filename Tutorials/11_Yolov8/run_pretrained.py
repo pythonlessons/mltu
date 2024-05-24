@@ -1,5 +1,6 @@
 import cv2
 from ultralytics.engine.model import Model as BaseModel
+from mltu.annotations.detections import Detections
 from mltu.torch.yolo.detectors.torch_detector import Detector as TorchDetector
 from mltu.torch.yolo.detectors.onnx_detector import Detector as OnnxDetector
 
@@ -18,7 +19,7 @@ while True:
         break
 
     # Perform Yolo object detection
-    detections = detector(frame)
+    detections: Detections = detector(frame)
 
     # Apply the detections to the frame
     frame = detections.applyToFrame(frame)

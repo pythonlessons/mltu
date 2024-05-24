@@ -70,6 +70,10 @@ class DataProvider:
         else:
             self.logger.info("Skipping Dataset validation...")
 
+        # Check if dataset has length
+        if not len(dataset):
+            raise ValueError("Dataset must be iterable")
+
         if limit:
             self.logger.info(f"Limiting dataset to {limit} samples.")
             self._dataset = self._dataset[:limit]

@@ -916,6 +916,8 @@ class RandomElasticTransform(Augmentor):
             detections = []
             for detection in annotation:
                 x_min, y_min, x_max, y_max = detection.xyxy_abs
+                x_max = min(x_max, dx.shape[1] - 1)
+                y_max = min(y_max, dy.shape[0] - 1)
                 new_x_min = min(max(0, x_min + dx[y_min, x_min]), image.width - 1)
                 new_y_min = min(max(0, y_min + dy[y_min, x_min]), image.height - 1)
                 new_x_max = min(max(0, x_max + dx[y_max, x_max]), image.width - 1)
