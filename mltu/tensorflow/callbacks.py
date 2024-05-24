@@ -1,5 +1,6 @@
 import os
 import tensorflow as tf
+from pathlib import Path
 from keras.callbacks import Callback
 
 import logging
@@ -14,7 +15,7 @@ class Model2onnx(Callback):
         ) -> None:
         """ Converts the model to onnx format after training is finished.
         Args:
-            saved_model_path (str): Path to the saved .h5 model.
+            saved_model_path (str): Path to the saved model.
             metadata (dict, optional): Dictionary containing metadata to be added to the onnx model. Defaults to None.
             save_on_epoch_end (bool, optional): Save the onnx model on every epoch end. Defaults to False.
         """
@@ -73,7 +74,7 @@ class Model2onnx(Callback):
     def on_train_end(self, logs=None):
         """ Converts the model to onnx format after training is finished. """
         self.model.load_weights(self.saved_model_path)
-        onnx_model_path = self.saved_model_path.replace(".h5", ".onnx")
+        onnx_model_path = str(Path(self.saved_model_path).with_suffix('.onnx'))
         self.model2onnx(self.model, onnx_model_path)
         self.include_metadata(onnx_model_path, self.metadata)
 
