@@ -336,7 +336,8 @@ class ImageShowCV2(Transformer):
         self, 
         verbose: bool = True,
         log_level: int = logging.INFO,
-        name: str = "Image"
+        name: str = "Image",
+        *args, **kwargs
         ) -> None:
         """
         Args:
@@ -348,6 +349,8 @@ class ImageShowCV2(Transformer):
         self.verbose = verbose
         self.name = name
         self.thread_started = False
+        self.args = args
+        self.kwargs = kwargs
 
     def init_thread(self):
         if not self.thread_started:
@@ -388,7 +391,7 @@ class ImageShowCV2(Transformer):
 
         if isinstance(label, Detections):
             for detection in label:
-                img = detection.applyToFrame(np.asarray(image.numpy()))
+                img = detection.applyToFrame(np.asarray(image.numpy()), **self.kwargs)
                 image.update(img)
 
         # Add image to display queue

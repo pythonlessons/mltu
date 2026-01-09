@@ -23,7 +23,8 @@ class Detection:
             image_path: str="", 
             width: int=None, 
             height: int=None,
-            relative: bool=False
+            relative: bool=False,
+            metadata: dict={}
         ):
         """
         Args:
@@ -36,6 +37,7 @@ class Detection:
             width (int, optional): Width of the image. Defaults to None.
             height (int, optional): Height of the image. Defaults to None.
             relative (bool, optional): Whether the bounding box coordinates are relative to the image size. Defaults to False.
+            metadata (dict, optional): Additional metadata. Defaults to {}.
         """
         self.bbox = np.array(bbox)
         self.label = label
@@ -46,6 +48,7 @@ class Detection:
         self.width = width
         self.height = height
         self.relative = relative
+        self.metadata = metadata
 
         self.augmented = False
 
@@ -97,11 +100,11 @@ class Detection:
     
     @staticmethod
     def xyxy2xywh(xyxy: np.ndarray):
-        """ Convert bounding box from x1, y1, x2, y2 to x, y, width, height
+        """ Convert bounding box from x1, y1, x2, y2 to x center, y center, width, height
         """
-        x, y, x2, y2 = xyxy
-        w, h = x2 - x, y2 - y
-        return np.array([x + w / 2, y + h / 2, w, h]).clip(0, 1)
+        x1, y1, x2, y2 = xyxy
+        w, h = max(x1, x2) - min(x1, x2), max(y1, y2) - min(y1, y2)
+        return np.array([min(x1, x2) + w / 2, min(y1, y2) + h / 2, w, h]).clip(0, 1)
     
     @staticmethod
     def ltwh2xywh(ltwh: np.ndarray):
@@ -193,14 +196,26 @@ class Detection:
         
         return self
 
-    def applyToFrame(self, frame: np.ndarray, color: tuple=(0, 255, 0), thickness: int=2, **kwargs) -> np.ndarray:
+    def applyToFrame(self, frame: np.ndarray, color: tuple=(0, 255, 0), thickness: int=2, draw_label: bool=True, **kwargs) -> np.ndarray:
         """ Draw the bounding box on the image
+
+        Args:
+            frame (np.ndarray): Image to draw the bounding box on
+            color (tuple, optional): Color of the bounding box. Defaults to (0, 255, 0).
+            thickness (int, optional): Thickness of the bounding box. Defaults to 2.
+            draw_label (bool, optional): Whether to draw the label on the bounding box. Defaults to True.
+
+        Returns:
+            np.ndarray: Image with the bounding box drawn
         """
         # Get the coordinates of the bounding box
         x, y, x2, y2 = (self.xyxy * np.array([self.width, self.height, self.width, self.height])).astype(np.int32)
 
         # Draw the bounding box on the image
         frame = cv2.rectangle(frame.copy(), (x, y), (x2, y2), color, thickness, **kwargs)
+
+        if not draw_label:
+            return frame
 
         label = f"{self.label}: {self.confidence:.2f}" if self.confidence > 0 else self.label
 
@@ -225,7 +240,8 @@ class Detection:
             "confidence": self.confidence,
             "image_path": self.image_path,
             "width": self.width,
-            "height": self.height
+            "height": self.height,
+            "metadata": self.metadata,
         }
     
 
@@ -285,7 +301,7 @@ class Detections:
     def applyToFrame(self, image: np.ndarray, **kwargs: dict) -> np.ndarray:
         """ Draw the detections on the image """
         for detection in self.detections:
-            color = self.color_palette[detection.labelId] if len(self.color_palette) == len(self.labels) else (0, 255, 0)
+            color = kwargs.get('color') or self.color_palette[detection.labelId] if len(self.color_palette) == len(self.labels) else (0, 255, 0)
             image = detection.applyToFrame(image, color=color, **kwargs)
         
         return image
